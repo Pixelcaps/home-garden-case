@@ -1,16 +1,24 @@
 import { Kysely } from 'kysely';
 import { Database, NewUser, User, UserUpdate } from '../types';
-import { BaseRepository } from './base.repository';
 
-export class UserRepository extends BaseRepository<'user'> {
-  constructor(db: Kysely<Database>) {
-    super(db, 'user');
+export class UserRepository {
+  private readonly db: Kysely<Database>;
+
+  constructor(opts: { db: Kysely<Database> }) {
+    this.db = opts.db;
+  }
+
+  /**
+   * Find all users
+   */
+  async findAll(): Promise<User[]> {
+    return await this.db.selectFrom('user').selectAll().execute();
   }
 
   /**
    * Find a user by userId
    */
-  async findById(userId: string): Promise<User | undefined> {
+  async findById(userId: number): Promise<User | undefined> {
     return await this.db
       .selectFrom('user')
       .where('userId', '=', userId)
@@ -45,7 +53,7 @@ export class UserRepository extends BaseRepository<'user'> {
   /**
    * Update a user by userId
    */
-  async update(userId: string, data: UserUpdate): Promise<User> {
+  async update(userId: number, data: UserUpdate): Promise<User> {
     const result = await this.db
       .updateTable('user')
       .set(data)
@@ -59,7 +67,7 @@ export class UserRepository extends BaseRepository<'user'> {
   /**
    * Delete a user by userId
    */
-  async delete(userId: string): Promise<boolean> {
+  async delete(userId: number): Promise<boolean> {
     const result = await this.db.deleteFrom('user').where('userId', '=', userId).executeTakeFirst();
 
     return Number(result.numDeletedRows) > 0;

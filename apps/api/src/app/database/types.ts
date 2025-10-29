@@ -7,11 +7,13 @@ export interface Database {
 }
 
 export interface UserTable {
-  userId: Generated<string>;
-  firstName: string;
+  userId: Generated<number>;
+  firstName: string | null;
   lastName: string | null;
   age: number | null;
   emailAddress: string;
+  createdAt: ColumnType<Date, string | undefined, never>;
+  updatedAt: ColumnType<Date, string | undefined, never>;
 }
 
 export type User = Selectable<UserTable>;
@@ -19,12 +21,14 @@ export type NewUser = Insertable<UserTable>;
 export type UserUpdate = Updateable<UserTable>;
 
 export interface GardenTable {
-  gardenId: Generated<string>;
+  gardenId: Generated<number>;
   gardenName: string;
   totalSurfaceArea: number; // in square meters
   locationDescription: string | null; // e.g., "Backyard", "Patio"
   latitude: number | null; // optional geographic coordinate
   longitude: number | null; // optional geographic coordinate
+  createdAt: ColumnType<Date, string | undefined, never>;
+  updatedAt: ColumnType<Date, string | undefined, never>;
 }
 
 export type Garden = Selectable<GardenTable>;
@@ -32,14 +36,16 @@ export type NewGarden = Insertable<GardenTable>;
 export type GardenUpdate = Updateable<GardenTable>;
 
 export interface PlantTable {
-  plantId: Generated<string>;
+  plantId: Generated<number>;
   plantName: string;
   species: string;
   plantType: 'vegetable' | 'fruit' | 'flower';
   plantationDate: ColumnType<Date, string | undefined, never>;
   surfaceAreaRequired: number; // in square meters
   idealHumidityLevel: number;
-  gardenId: string; // foreign key to Garden
+  gardenId: number; // foreign key to Garden
+  createdAt: ColumnType<Date, string | undefined, never>;
+  updatedAt: ColumnType<Date, string | undefined, never>;
 }
 
 export type Plant = Selectable<PlantTable>;

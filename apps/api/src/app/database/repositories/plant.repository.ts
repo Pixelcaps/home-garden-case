@@ -1,16 +1,24 @@
 import { Kysely } from 'kysely';
 import { Database, NewPlant, Plant, PlantUpdate } from '../types';
-import { BaseRepository } from './base.repository';
 
-export class PlantRepository extends BaseRepository<'plant'> {
-  constructor(db: Kysely<Database>) {
-    super(db, 'plant');
+export class PlantRepository {
+  private readonly db: Kysely<Database>;
+
+  constructor(opts: { db: Kysely<Database> }) {
+    this.db = opts.db;
+  }
+
+  /**
+   * Find all plants
+   */
+  async findAll(): Promise<Plant[]> {
+    return await this.db.selectFrom('plant').selectAll().execute();
   }
 
   /**
    * Find a plant by plantId
    */
-  async findById(plantId: string): Promise<Plant | undefined> {
+  async findById(plantId: number): Promise<Plant | undefined> {
     return await this.db
       .selectFrom('plant')
       .where('plantId', '=', plantId)
@@ -21,7 +29,7 @@ export class PlantRepository extends BaseRepository<'plant'> {
   /**
    * Find all plants in a specific garden
    */
-  async findByGardenId(gardenId: string): Promise<Plant[]> {
+  async findByGardenId(gardenId: number): Promise<Plant[]> {
     return await this.db.selectFrom('plant').where('gardenId', '=', gardenId).selectAll().execute();
   }
 
@@ -59,7 +67,7 @@ export class PlantRepository extends BaseRepository<'plant'> {
   /**
    * Update a plant by plantId
    */
-  async update(plantId: string, data: PlantUpdate): Promise<Plant> {
+  async update(plantId: number, data: PlantUpdate): Promise<Plant> {
     const result = await this.db
       .updateTable('plant')
       .set(data)
@@ -73,7 +81,7 @@ export class PlantRepository extends BaseRepository<'plant'> {
   /**
    * Delete a plant by plantId
    */
-  async delete(plantId: string): Promise<boolean> {
+  async delete(plantId: number): Promise<boolean> {
     const result = await this.db
       .deleteFrom('plant')
       .where('plantId', '=', plantId)

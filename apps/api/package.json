@@ -98,9 +98,14 @@
     }
   },
   "dependencies": {
+    "@fastify/autoload": "~6.0.3",
+    "@fastify/sensible": "~6.0.2",
+    "better-sqlite3": "^12.4.1",
     "fastify": "~5.2.1",
     "fastify-plugin": "~5.0.1",
-    "@fastify/autoload": "~6.0.3",
-    "@fastify/sensible": "~6.0.2"
+    "kysely": "^0.28.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13"
   }
 }

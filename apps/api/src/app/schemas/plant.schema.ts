@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v4';
 
 export const createPlantSchema = z.object({
   plantName: z.string().min(1, 'Plant name is required').trim(),

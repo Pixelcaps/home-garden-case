@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
+import { z } from 'zod/v4';
 import {
   createPlantSchema,
   gardenIdParamsSchema,
@@ -9,6 +9,50 @@ import {
   updatePlantSchema,
 } from '../schemas/plant.schema';
 import { PlantService } from '../services/plant.service';
+import {
+  internalServerErrorResponse,
+  notFoundErrorResponse,
+  validationErrorResponse,
+} from '../specs/shared.specs';
+
+const plantRequest = {
+  type: 'object',
+  properties: {
+    plantName: { type: 'string' },
+    species: { type: 'string' },
+    plantType: { type: 'string', enum: ['vegetable', 'fruit', 'flower'] },
+    plantationDate: { type: 'string', format: 'date-time' },
+    surfaceAreaRequired: { type: 'number', minimum: 0 },
+    idealHumidityLevel: { type: 'number', minimum: 0, maximum: 100 },
+    gardenId: { type: 'number' },
+  },
+  required: [
+    'plantName',
+    'species',
+    'plantType',
+    'plantationDate',
+    'surfaceAreaRequired',
+    'idealHumidityLevel',
+    'gardenId',
+  ],
+};
+
+const plantResponse = {
+  description: 'Plant object',
+  type: 'object',
+  properties: {
+    plantId: { type: 'number' },
+    plantName: { type: 'string' },
+    species: { type: 'string' },
+    plantType: { type: 'string', enum: ['vegetable', 'fruit', 'flower'] },
+    plantationDate: { type: 'string', format: 'date-time' },
+    surfaceAreaRequired: { type: 'number' },
+    idealHumidityLevel: { type: 'number' },
+    gardenId: { type: 'number' },
+    createdAt: { type: 'string', format: 'date-time' },
+    updatedAt: { type: 'string', format: 'date-time' },
+  },
+};
 
 export default async function (fastify: FastifyInstance) {
   const plantService = fastify.diContainer.resolve<PlantService>('plantService');
@@ -17,56 +61,93 @@ export default async function (fastify: FastifyInstance) {
    * GET /plants
    * Get all plants
    */
-  fastify.get('/plants', async (request, reply) => {
-    try {
+  fastify.get(
+    '/plants',
+    {
+      schema: {
+        description: 'Get all plants',
+        tags: ['plants'],
+        response: {
+          200: {
+            description: 'List of plants',
+            type: 'array',
+            items: plantResponse,
+          },
+          500: internalServerErrorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
       const plants = await plantService.getAllPlants();
       return reply.send(plants);
-    } catch (error) {
-      console.error(error);
-      reply.status(500).send({ error: 'Failed to fetch plants' });
-    }
-  });
+    },
+  );
 
   /**
    * GET /plants/:plantId
    * Get a plant by ID
    */
-  fastify.get<{ Params: { plantId: string } }>('/plants/:plantId', async (request, reply) => {
-    try {
+  fastify.get<{ Params: { plantId: number } }>(
+    '/plants/:plantId',
+    {
+      schema: {
+        description: 'Get a plant by ID',
+        tags: ['plants'],
+        params: {
+          type: 'object',
+          properties: {
+            plantId: { type: 'string' },
+          },
+          required: ['plantId'],
+        },
+        response: {
+          200: plantResponse,
+          400: validationErrorResponse,
+          404: notFoundErrorResponse('Plant'),
+          500: internalServerErrorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
       const { plantId } = plantIdParamsSchema.parse({ plantId: request.params.plantId });
       const plant = await plantService.getPlantById(plantId);
       return reply.send(plant);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Validation error', details: error.issues });
-      }
-      if (error instanceof Error && error.message.includes('not found')) {
-        return reply.status(404).send({ error: error.message });
-      }
-      reply.status(500).send({ error: 'Failed to fetch plant' });
-    }
-  });
+    },
+  );
 
   /**
    * GET /plants/garden/:gardenId
    * Get all plants in a specific garden
    */
-  fastify.get<{ Params: { gardenId: string } }>(
+  fastify.get<{ Params: { gardenId: number } }>(
     '/plants/garden/:gardenId',
+    {
+      schema: {
+        description: 'Get all plants in a specific garden',
+        tags: ['plants'],
+        params: {
+          type: 'object',
+          properties: {
+            gardenId: { type: 'string' },
+          },
+          required: ['gardenId'],
+        },
+        response: {
+          200: {
+            description: 'List of plants in the garden',
+            type: 'array',
+            items: plantResponse,
+          },
+          400: validationErrorResponse,
+          404: notFoundErrorResponse('Garden'),
+          500: internalServerErrorResponse,
+        },
+      },
+    },
     async (request, reply) => {
-      try {
-        const { gardenId } = gardenIdParamsSchema.parse({ gardenId: request.params.gardenId });
-        const plants = await plantService.getPlantsByGardenId(gardenId);
-        return reply.send(plants);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          return reply.status(400).send({ error: 'Validation error', details: error.issues });
-        }
-        if (error instanceof Error && error.message.includes('not found')) {
-          return reply.status(404).send({ error: error.message });
-        }
-        reply.status(500).send({ error: 'Failed to fetch plants' });
-      }
+      const { gardenId } = gardenIdParamsSchema.parse({ gardenId: request.params.gardenId });
+      const plants = await plantService.getPlantsByGardenId(gardenId);
+      return reply.send(plants);
     },
   );
 
@@ -76,17 +157,32 @@ export default async function (fastify: FastifyInstance) {
    */
   fastify.get<{ Params: { plantType: 'vegetable' | 'fruit' | 'flower' } }>(
     '/plants/type/:plantType',
+    {
+      schema: {
+        description: 'Get plants by type (vegetable, fruit, or flower)',
+        tags: ['plants'],
+        params: {
+          type: 'object',
+          properties: {
+            plantType: { type: 'string', enum: ['vegetable', 'fruit', 'flower'] },
+          },
+          required: ['plantType'],
+        },
+        response: {
+          200: {
+            description: 'List of plants of the specified type',
+            type: 'array',
+            items: plantResponse,
+          },
+          400: validationErrorResponse,
+          500: internalServerErrorResponse,
+        },
+      },
+    },
     async (request, reply) => {
-      try {
-        const { plantType } = plantTypeParamsSchema.parse({ plantType: request.params.plantType });
-        const plants = await plantService.getPlantsByType(plantType);
-        return reply.send(plants);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          return reply.status(400).send({ error: 'Validation error', details: error.issues });
-        }
-        reply.status(500).send({ error: 'Failed to fetch plants' });
-      }
+      const { plantType } = plantTypeParamsSchema.parse({ plantType: request.params.plantType });
+      const plants = await plantService.getPlantsByType(plantType);
+      return reply.send(plants);
     },
   );
 
@@ -96,17 +192,32 @@ export default async function (fastify: FastifyInstance) {
    */
   fastify.get<{ Params: { species: string } }>(
     '/plants/species/:species',
+    {
+      schema: {
+        description: 'Get plants by species',
+        tags: ['plants'],
+        params: {
+          type: 'object',
+          properties: {
+            species: { type: 'string' },
+          },
+          required: ['species'],
+        },
+        response: {
+          200: {
+            description: 'List of plants of the specified species',
+            type: 'array',
+            items: plantResponse,
+          },
+          400: validationErrorResponse,
+          500: internalServerErrorResponse,
+        },
+      },
+    },
     async (request, reply) => {
-      try {
-        const { species } = speciesParamsSchema.parse({ species: request.params.species });
-        const plants = await plantService.getPlantsBySpecies(species);
-        return reply.send(plants);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          return reply.status(400).send({ error: 'Validation error', details: error.issues });
-        }
-        reply.status(500).send({ error: 'Failed to fetch plants' });
-      }
+      const { species } = speciesParamsSchema.parse({ species: request.params.species });
+      const plants = await plantService.getPlantsBySpecies(species);
+      return reply.send(plants);
     },
   );
 
@@ -116,25 +227,26 @@ export default async function (fastify: FastifyInstance) {
    */
   fastify.post<{
     Body: z.infer<typeof createPlantSchema>;
-  }>('/plants', async (request, reply) => {
-    try {
+  }>(
+    '/plants',
+    {
+      schema: {
+        description: 'Create a new plant',
+        tags: ['plants'],
+        body: plantRequest,
+        response: {
+          201: plantResponse,
+          400: validationErrorResponse,
+          404: notFoundErrorResponse('Garden'),
+          500: internalServerErrorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
       const plant = await plantService.createPlant(request.body);
       return reply.status(201).send(plant);
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.message.includes('not found')) {
-          return reply.status(404).send({ error: error.message });
-        }
-        if (error.message.includes('would exceed')) {
-          return reply.status(400).send({ error: error.message });
-        }
-        if (error.constructor.name === 'ZodError') {
-          return reply.status(400).send({ error: 'Validation error', details: error });
-        }
-      }
-      return reply.status(500).send({ error: 'Failed to create plant' });
-    }
-  });
+    },
+  );
 
   /**
    * PUT /plants/:plantId
@@ -143,47 +255,86 @@ export default async function (fastify: FastifyInstance) {
   fastify.put<{
     Params: { plantId: string };
     Body: z.infer<typeof updatePlantSchema>;
-  }>('/plants/:plantId', async (request, reply) => {
-    try {
+  }>(
+    '/plants/:plantId',
+    {
+      schema: {
+        description: 'Update a plant',
+        tags: ['plants'],
+        params: {
+          type: 'object',
+          properties: {
+            plantId: { type: 'string' },
+          },
+          required: ['plantId'],
+        },
+        body: plantRequest,
+        response: {
+          200: plantResponse,
+          400: validationErrorResponse,
+          404: notFoundErrorResponse('Plant'),
+          500: internalServerErrorResponse,
+        },
+      },
+    },
+    async (request, reply) => {
       const { plantId } = plantIdParamsSchema.parse({ plantId: request.params.plantId });
       const plant = await plantService.updatePlant(plantId, request.body);
       return reply.send(plant);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Validation error', details: error.issues });
-      }
-      if (error instanceof Error) {
-        if (error.message.includes('not found')) {
-          return reply.status(404).send({ error: error.message });
-        }
-        if (error.message.includes('would exceed')) {
-          return reply.status(400).send({ error: error.message });
-        }
-        if (error.constructor.name === 'ZodError') {
-          return reply.status(400).send({ error: 'Validation error', details: error });
-        }
-      }
-      return reply.status(500).send({ error: 'Failed to update plant' });
-    }
-  });
+    },
+  );
 
   /**
    * DELETE /plants/:plantId
    * Delete a plant
    */
-  fastify.delete<{ Params: { plantId: string } }>('/plants/:plantId', async (request, reply) => {
-    try {
+  fastify.delete<{ Params: { plantId: string } }>(
+    '/plants/:plantId',
+    {
+      schema: {
+        description: 'Delete a plant',
+        tags: ['plants'],
+        params: {
+          type: 'object',
+          properties: {
+            plantId: { type: 'string' },
+          },
+          required: ['plantId'],
+        },
+        response: {
+          204: {
+            description: 'Plant deleted successfully',
+            type: 'null',
+          },
+          400: {
+            description: 'Validation error',
+            type: 'object',
+            properties: {
+              error: { type: 'string' },
+              details: { type: 'array' },
+            },
+          },
+          404: {
+            description: 'Plant not found',
+            type: 'object',
+            properties: {
+              error: { type: 'string' },
+            },
+          },
+          500: {
+            description: 'Internal server error',
+            type: 'object',
+            properties: {
+              error: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
       const { plantId } = plantIdParamsSchema.parse({ plantId: request.params.plantId });
       await plantService.deletePlant(plantId);
       return reply.status(204).send();
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return reply.status(400).send({ error: 'Validation error', details: error.issues });
-      }
-      if (error instanceof Error && error.message.includes('not found')) {
-        return reply.status(404).send({ error: error.message });
-      }
-      return reply.status(500).send({ error: 'Failed to delete plant' });
-    }
-  });
+    },
+  );
 }

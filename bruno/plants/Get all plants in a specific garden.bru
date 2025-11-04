@@ -1,0 +1,15 @@
+meta {
+  name: Get all plants in a specific garden
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/plants/garden/:gardenId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  gardenId: 1
+}

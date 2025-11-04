@@ -1,0 +1,21 @@
+meta {
+  name: Create a new garden
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/gardens
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "gardenName": "Garden 1",
+    "totalSurfaceArea": 100,
+    "locationDescription": "Location 1",
+    "latitude": 10,
+    "longitude": 10
+  }
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Delete a garden
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/gardens/:gardenId
+  body: none
+  auth: inherit
+}
+
+params:path {
+  gardenId: 
+}

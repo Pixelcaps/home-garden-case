@@ -1,0 +1,27 @@
+meta {
+  name: Update a plant
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{baseUrl}}/plants/:plantId
+  body: json
+  auth: inherit
+}
+
+params:path {
+  plantId: 2
+}
+
+body:json {
+  {
+    "plantName": "",
+    "species": "",
+    "plantType": "",
+    "plantationDate": "",
+    "surfaceAreaRequired": "",
+    "idealHumidityLevel": "",
+    "gardenId": ""
+  }
+}

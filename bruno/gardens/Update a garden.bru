@@ -1,0 +1,25 @@
+meta {
+  name: Update a garden
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/gardens/:gardenId
+  body: json
+  auth: inherit
+}
+
+params:path {
+  gardenId: 1
+}
+
+body:json {
+  {
+    "gardenName": "Garden 1",
+    "totalSurfaceArea": 100,
+    "locationDescription": "Location 1",
+    "latitude": 10,
+    "longitude": 10
+  }
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Get a user by email address
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/users/email/:emailAddress
+  body: none
+  auth: inherit
+}
+
+params:path {
+  emailAddress: 
+}

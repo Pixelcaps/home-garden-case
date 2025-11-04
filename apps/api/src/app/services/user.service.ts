@@ -1,6 +1,7 @@
 import { UserRepository } from '../database/repositories/user.repository';
 import { NewUser, User, UserUpdate } from '../database/types';
 import { createUserSchema, updateUserSchema } from '../schemas/user.schema';
+import { ConflictError, NotFoundError } from '../shared/errors';
 
 export class UserService {
   private readonly userRepository: UserRepository;
@@ -23,7 +24,7 @@ export class UserService {
   async getUserById(userId: number): Promise<User> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new Error(`User with ID ${userId} not found`);
+      throw new NotFoundError(`User with ID ${userId} not found`);
     }
     return user;
   }
@@ -35,7 +36,7 @@ export class UserService {
   async getUserByEmail(emailAddress: string): Promise<User> {
     const user = await this.userRepository.findByEmail(emailAddress);
     if (!user) {
-      throw new Error(`User with email ${emailAddress} not found`);
+      throw new NotFoundError(`User with email ${emailAddress} not found`);
     }
     return user;
   }
@@ -59,7 +60,7 @@ export class UserService {
     // Check if user with this email already exists
     const existingUser = await this.userRepository.findByEmail(validatedData.emailAddress);
     if (existingUser) {
-      throw new Error(`User with email ${validatedData.emailAddress} already exists`);
+      throw new ConflictError(`User with email ${validatedData.emailAddress} already exists`);
     }
 
     return await this.userRepository.create(validatedData);
@@ -73,7 +74,7 @@ export class UserService {
     // Verify user exists
     const existingUser = await this.userRepository.findById(userId);
     if (!existingUser) {
-      throw new Error(`User with ID ${userId} not found`);
+      throw new NotFoundError(`User with ID ${userId} not found`);
     }
 
     // Validate with Zod schema
@@ -83,7 +84,9 @@ export class UserService {
     if (validatedData.emailAddress && validatedData.emailAddress !== existingUser.emailAddress) {
       const userWithEmail = await this.userRepository.findByEmail(validatedData.emailAddress);
       if (userWithEmail && userWithEmail.userId !== userId) {
-        throw new Error(`Email ${validatedData.emailAddress} is already in use by another user`);
+        throw new ConflictError(
+          `Email ${validatedData.emailAddress} is already in use by another user`,
+        );
       }
     }
 
@@ -97,7 +100,7 @@ export class UserService {
   async deleteUser(userId: number): Promise<void> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new Error(`User with ID ${userId} not found`);
+      throw new NotFoundError(`User with ID ${userId} not found`);
     }
 
     const deleted = await this.userRepository.delete(userId);

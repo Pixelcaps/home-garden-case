@@ -1,41 +1,21 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod/v4';
 import {
+  conflictErrorResponseSchema,
+  internalServerErrorResponseSchema,
+  notFoundErrorResponseSchema,
+  validationErrorResponseSchema,
+} from '../schemas/error.schema';
+import { emptyResponseSchema } from '../schemas/general.schema';
+import {
   createUserSchema,
   emailParamsSchema,
   updateUserSchema,
   userIdParamsSchema,
+  userResponseSchema,
+  usersResponseSchema,
 } from '../schemas/user.schema';
 import { UserService } from '../services/user.service';
-import {
-  conflictErrorResponse,
-  internalServerErrorResponse,
-  notFoundErrorResponse,
-  validationErrorResponse,
-} from '../specs/shared.specs';
-
-const userRequest = {
-  type: 'object',
-  properties: {
-    firstName: { type: 'string', nullable: true },
-    lastName: { type: 'string', nullable: true },
-    age: { type: 'number', nullable: true },
-    emailAddress: { type: 'string', format: 'email' },
-  },
-};
-
-const userResponse = {
-  type: 'object',
-  properties: {
-    userId: { type: 'number' },
-    firstName: { type: 'string', nullable: true },
-    lastName: { type: 'string', nullable: true },
-    age: { type: 'number', nullable: true },
-    emailAddress: { type: 'string', format: 'email' },
-    createdAt: { type: 'string', format: 'date-time' },
-    updatedAt: { type: 'string', format: 'date-time' },
-  },
-};
 
 export default async function (fastify: FastifyInstance) {
   const userService = fastify.diContainer.resolve<UserService>('userService');
@@ -51,16 +31,12 @@ export default async function (fastify: FastifyInstance) {
         description: 'Get all users',
         tags: ['users'],
         response: {
-          200: {
-            description: 'List of users',
-            type: 'array',
-            items: userResponse,
-          },
-          500: internalServerErrorResponse,
+          200: usersResponseSchema,
+          500: internalServerErrorResponseSchema,
         },
       },
     },
-    async (request, reply) => {
+    async (_, reply) => {
       const users = await userService.getAllUsers();
       return reply.send(users);
     },
@@ -70,30 +46,23 @@ export default async function (fastify: FastifyInstance) {
    * GET /users/:userId
    * Get a user by ID
    */
-  fastify.get<{ Params: { userId: string } }>(
+  fastify.get<{ Params: z.infer<typeof userIdParamsSchema> }>(
     '/users/:userId',
     {
       schema: {
         description: 'Get a user by ID',
         tags: ['users'],
-        params: {
-          type: 'object',
-          properties: {
-            userId: { type: 'string' },
-          },
-          required: ['userId'],
-        },
+        params: userIdParamsSchema,
         response: {
-          200: userResponse,
-          400: validationErrorResponse,
-          404: notFoundErrorResponse('User'),
-          500: internalServerErrorResponse,
+          200: userResponseSchema,
+          400: validationErrorResponseSchema,
+          404: notFoundErrorResponseSchema,
+          500: internalServerErrorResponseSchema,
         },
       },
     },
     async (request, reply) => {
-      const { userId } = userIdParamsSchema.parse({ userId: request.params.userId });
-      const user = await userService.getUserById(userId);
+      const user = await userService.getUserById(request.params.userId);
       return reply.send(user);
     },
   );
@@ -102,32 +71,23 @@ export default async function (fastify: FastifyInstance) {
    * GET /users/email/:emailAddress
    * Get a user by email address
    */
-  fastify.get<{ Params: { emailAddress: string } }>(
+  fastify.get<{ Params: z.infer<typeof emailParamsSchema> }>(
     '/users/email/:emailAddress',
     {
       schema: {
         description: 'Get a user by email address',
         tags: ['users'],
-        params: {
-          type: 'object',
-          properties: {
-            emailAddress: { type: 'string' },
-          },
-          required: ['emailAddress'],
-        },
+        params: emailParamsSchema,
         response: {
-          200: userResponse,
-          400: validationErrorResponse,
-          404: notFoundErrorResponse('User'),
-          500: internalServerErrorResponse,
+          200: userResponseSchema,
+          400: validationErrorResponseSchema,
+          404: notFoundErrorResponseSchema,
+          500: internalServerErrorResponseSchema,
         },
       },
     },
     async (request, reply) => {
-      const { emailAddress } = emailParamsSchema.parse({
-        emailAddress: request.params.emailAddress,
-      });
-      const user = await userService.getUserByEmail(emailAddress);
+      const user = await userService.getUserByEmail(request.params.emailAddress);
       return reply.send(user);
     },
   );
@@ -144,12 +104,12 @@ export default async function (fastify: FastifyInstance) {
       schema: {
         description: 'Create a new user',
         tags: ['users'],
-        body: userRequest,
+        body: createUserSchema,
         response: {
-          201: userResponse,
-          400: validationErrorResponse,
-          409: conflictErrorResponse('User'),
-          500: internalServerErrorResponse,
+          201: userResponseSchema,
+          400: validationErrorResponseSchema,
+          409: conflictErrorResponseSchema,
+          500: internalServerErrorResponseSchema,
         },
       },
     },
@@ -165,7 +125,7 @@ export default async function (fastify: FastifyInstance) {
    * Update a user
    */
   fastify.put<{
-    Params: { userId: string };
+    Params: z.infer<typeof userIdParamsSchema>;
     Body: z.infer<typeof updateUserSchema>;
   }>(
     '/users/:userId',
@@ -173,26 +133,19 @@ export default async function (fastify: FastifyInstance) {
       schema: {
         description: 'Update a user',
         tags: ['users'],
-        params: {
-          type: 'object',
-          properties: {
-            userId: { type: 'string' },
-          },
-          required: ['userId'],
-        },
-        body: userRequest,
+        params: userIdParamsSchema,
+        body: updateUserSchema,
         response: {
-          200: userResponse,
-          400: validationErrorResponse,
-          404: notFoundErrorResponse('User'),
-          409: conflictErrorResponse('Email'),
-          500: internalServerErrorResponse,
+          200: userResponseSchema,
+          400: validationErrorResponseSchema,
+          404: notFoundErrorResponseSchema,
+          409: conflictErrorResponseSchema,
+          500: internalServerErrorResponseSchema,
         },
       },
     },
     async (request, reply) => {
-      const { userId } = userIdParamsSchema.parse({ userId: request.params.userId });
-      const user = await userService.updateUser(userId, request.body);
+      const user = await userService.updateUser(request.params.userId, request.body);
       return reply.send(user);
     },
   );
@@ -201,33 +154,23 @@ export default async function (fastify: FastifyInstance) {
    * DELETE /users/:userId
    * Delete a user
    */
-  fastify.delete<{ Params: { userId: string } }>(
+  fastify.delete<{ Params: z.infer<typeof userIdParamsSchema> }>(
     '/users/:userId',
     {
       schema: {
         description: 'Delete a user',
         tags: ['users'],
-        params: {
-          type: 'object',
-          properties: {
-            userId: { type: 'string' },
-          },
-          required: ['userId'],
-        },
+        params: userIdParamsSchema,
         response: {
-          204: {
-            description: 'User deleted successfully',
-            type: 'null',
-          },
-          400: validationErrorResponse,
-          404: notFoundErrorResponse('User'),
-          500: internalServerErrorResponse,
+          204: emptyResponseSchema,
+          400: validationErrorResponseSchema,
+          404: notFoundErrorResponseSchema,
+          500: internalServerErrorResponseSchema,
         },
       },
     },
     async (request, reply) => {
-      const { userId } = userIdParamsSchema.parse({ userId: request.params.userId });
-      await userService.deleteUser(userId);
+      await userService.deleteUser(request.params.userId);
       return reply.status(204).send();
     },
   );

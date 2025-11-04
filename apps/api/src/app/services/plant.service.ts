@@ -2,6 +2,7 @@ import { GardenRepository } from '../database/repositories/garden.repository';
 import { PlantRepository } from '../database/repositories/plant.repository';
 import { NewPlant, Plant, PlantUpdate } from '../database/types';
 import { createPlantSchema, updatePlantSchema } from '../schemas/plant.schema';
+import { NotFoundError, ValidationError } from '../shared/errors';
 
 export class PlantService {
   private readonly plantRepository: PlantRepository;
@@ -13,20 +14,13 @@ export class PlantService {
   }
 
   /**
-   * Get all plants
-   */
-  async getAllPlants(): Promise<Plant[]> {
-    return await this.plantRepository.findAll();
-  }
-
-  /**
    * Get a plant by ID
    * @throws Error if plant not found
    */
   async getPlantById(plantId: number): Promise<Plant> {
     const plant = await this.plantRepository.findById(plantId);
     if (!plant) {
-      throw new Error(`Plant with ID ${plantId} not found`);
+      throw new NotFoundError(`Plant with ID ${plantId} not found`);
     }
     return plant;
   }
@@ -39,24 +33,10 @@ export class PlantService {
     // Verify garden exists
     const garden = await this.gardenRepository.findById(gardenId);
     if (!garden) {
-      throw new Error(`Garden with ID ${gardenId} not found`);
+      throw new ValidationError(`Garden with ID ${gardenId} not found`);
     }
 
     return await this.plantRepository.findByGardenId(gardenId);
-  }
-
-  /**
-   * Get plants by type (vegetable, fruit, or flower)
-   */
-  async getPlantsByType(plantType: 'vegetable' | 'fruit' | 'flower'): Promise<Plant[]> {
-    return await this.plantRepository.findByType(plantType);
-  }
-
-  /**
-   * Get plants by species
-   */
-  async getPlantsBySpecies(species: string): Promise<Plant[]> {
-    return await this.plantRepository.findBySpecies(species);
   }
 
   /**
@@ -70,7 +50,7 @@ export class PlantService {
     // Verify garden exists
     const garden = await this.gardenRepository.findById(validatedData.gardenId);
     if (!garden) {
-      throw new Error(`Garden with ID ${validatedData.gardenId} not found`);
+      throw new NotFoundError(`Garden with ID ${validatedData.gardenId} not found`);
     }
 
     // Check if total surface area would be exceeded
@@ -79,7 +59,7 @@ export class PlantService {
     const newTotalArea = totalUsedArea + validatedData.surfaceAreaRequired;
 
     if (newTotalArea > garden.totalSurfaceArea) {
-      throw new Error(
+      throw new ValidationError(
         `Cannot add plant: total surface area required (${newTotalArea}m²) would exceed garden's total surface area (${garden.totalSurfaceArea}m²)`,
       );
     }
@@ -95,7 +75,7 @@ export class PlantService {
     // Verify plant exists
     const existingPlant = await this.plantRepository.findById(plantId);
     if (!existingPlant) {
-      throw new Error(`Plant with ID ${plantId} not found`);
+      throw new NotFoundError(`Plant with ID ${plantId} not found`);
     }
 
     // Validate with Zod schema
@@ -106,7 +86,7 @@ export class PlantService {
     if (validatedData.gardenId && validatedData.gardenId !== existingPlant.gardenId) {
       const newGarden = await this.gardenRepository.findById(validatedData.gardenId);
       if (!newGarden) {
-        throw new Error(`Garden with ID ${validatedData.gardenId} not found`);
+        throw new ValidationError(`Garden with ID ${validatedData.gardenId} not found`);
       }
     }
 
@@ -117,7 +97,7 @@ export class PlantService {
 
       const garden = await this.gardenRepository.findById(targetGardenId);
       if (!garden) {
-        throw new Error(`Garden with ID ${targetGardenId} not found`);
+        throw new ValidationError(`Garden with ID ${targetGardenId} not found`);
       }
 
       const existingPlants = await this.plantRepository.findByGardenId(targetGardenId);
@@ -127,7 +107,7 @@ export class PlantService {
       const newTotalArea = totalUsedArea + finalSurfaceArea;
 
       if (newTotalArea > garden.totalSurfaceArea) {
-        throw new Error(
+        throw new ValidationError(
           `Cannot update plant: total surface area required (${newTotalArea}m²) would exceed garden's total surface area (${garden.totalSurfaceArea}m²)`,
         );
       }
@@ -143,7 +123,7 @@ export class PlantService {
   async deletePlant(plantId: number): Promise<void> {
     const plant = await this.plantRepository.findById(plantId);
     if (!plant) {
-      throw new Error(`Plant with ID ${plantId} not found`);
+      throw new NotFoundError(`Plant with ID ${plantId} not found`);
     }
 
     const deleted = await this.plantRepository.delete(plantId);

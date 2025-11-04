@@ -2,6 +2,7 @@ import AutoLoad from '@fastify/autoload';
 import { diContainer, fastifyAwilixPlugin } from '@fastify/awilix';
 import { asClass, asFunction } from 'awilix';
 import { FastifyInstance } from 'fastify';
+import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import * as path from 'path';
 import { DatabaseConnection } from './database/connection';
 import { MigratorService } from './database/migrator';
@@ -34,6 +35,9 @@ export async function app(fastify: FastifyInstance, opts: AppOptions) {
     disposeOnResponse: true,
     strictBooleanEnforced: true,
   });
+
+  fastify.setValidatorCompiler(validatorCompiler);
+  fastify.setSerializerCompiler(serializerCompiler);
 
   fastify.register(AutoLoad, {
     dir: path.join(__dirname, 'plugins'),

@@ -1,6 +1,7 @@
 import { GardenRepository } from '../database/repositories/garden.repository';
 import { Garden, GardenUpdate, NewGarden } from '../database/types';
 import { createGardenSchema, updateGardenSchema } from '../schemas/garden.schema';
+import { NotFoundError } from '../shared/errors';
 
 export class GardenService {
   private readonly gardenRepository: GardenRepository;
@@ -23,16 +24,9 @@ export class GardenService {
   async getGardenById(gardenId: number): Promise<Garden> {
     const garden = await this.gardenRepository.findById(gardenId);
     if (!garden) {
-      throw new Error(`Garden with ID ${gardenId} not found`);
+      throw new NotFoundError(`Garden with ID ${gardenId} not found`);
     }
     return garden;
-  }
-
-  /**
-   * Search gardens by name (case-insensitive partial match)
-   */
-  async searchGardensByName(gardenName: string): Promise<Garden[]> {
-    return await this.gardenRepository.findByName(gardenName);
   }
 
   /**
@@ -54,7 +48,7 @@ export class GardenService {
     // Verify garden exists
     const existingGarden = await this.gardenRepository.findById(gardenId);
     if (!existingGarden) {
-      throw new Error(`Garden with ID ${gardenId} not found`);
+      throw new NotFoundError(`Garden with ID ${gardenId} not found`);
     }
 
     // Validate with Zod schema
@@ -70,7 +64,7 @@ export class GardenService {
   async deleteGarden(gardenId: number): Promise<void> {
     const garden = await this.gardenRepository.findById(gardenId);
     if (!garden) {
-      throw new Error(`Garden with ID ${gardenId} not found`);
+      throw new NotFoundError(`Garden with ID ${gardenId} not found`);
     }
 
     const deleted = await this.gardenRepository.delete(gardenId);

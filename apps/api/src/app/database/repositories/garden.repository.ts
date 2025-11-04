@@ -27,17 +27,6 @@ export class GardenRepository {
   }
 
   /**
-   * Find gardens by name (case-insensitive partial match)
-   */
-  async findByName(gardenName: string): Promise<Garden[]> {
-    return await this.db
-      .selectFrom('garden')
-      .where('gardenName', 'ilike', `%${gardenName}%`)
-      .selectAll()
-      .execute();
-  }
-
-  /**
    * Create a new garden
    */
   async create(data: NewGarden): Promise<Garden> {

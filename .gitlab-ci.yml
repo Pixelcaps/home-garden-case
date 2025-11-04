@@ -20,7 +20,3 @@ CI:
     # Prepend any command with "nx-cloud record --" to record its logs to Nx Cloud
     # - npx nx-cloud record -- echo Hello World
     - npx nx run-many -t lint test build typecheck
-    # Nx Cloud recommends fixes for failures to help you get CI green faster. Learn more: https://nx.dev/ci/features/self-healing-ci
-
-  after_script:
-    - npx nx fix-ci

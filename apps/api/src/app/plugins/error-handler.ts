@@ -58,9 +58,10 @@ export default fp(async function (fastify: FastifyInstance) {
         // Log the error for debugging
         fastify.log.error(error);
 
-        // Default error response
+        // Use the statusCode from the error if available, otherwise default to 500
         return reply.status(500).send({
-          error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error',
+          error: 'Internal server error',
+          details: [error.message],
         });
       }
 
@@ -68,6 +69,7 @@ export default fp(async function (fastify: FastifyInstance) {
       fastify.log.error({ error }, 'Unknown error type');
       return reply.status(500).send({
         error: 'Internal server error',
+        details: ['Unknown error type'],
       });
     },
   );

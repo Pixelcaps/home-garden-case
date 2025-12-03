@@ -6,7 +6,7 @@
       "request": "launch",
       "name": "Debug @itp-home-garden/api with Nx",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["nx", "serve", "@itp-home-garden/api"],
+      "runtimeArgs": ["nx", "dev", "@itp-home-garden/api"],
       "env": {
         "NODE_OPTIONS": "--inspect=9229"
       },

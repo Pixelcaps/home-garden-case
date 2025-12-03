@@ -20,7 +20,13 @@ export default fp(async function (fastify: FastifyInstance) {
     `Random errors plugin enabled with ${rate}% error rate and status code ${statusCode}`,
   );
 
-  fastify.addHook('onRequest', async () => {
+  fastify.addHook('onRequest', async (request) => {
+    // Never throw errors on docs routes
+    const url = request.url;
+    if (url.startsWith('/docs')) {
+      return;
+    }
+
     const randomValue = Math.random() * 100;
     if (randomValue < rate) {
       fastify.log.info(

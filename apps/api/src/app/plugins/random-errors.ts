@@ -22,8 +22,6 @@ export default fp(async function (fastify: FastifyInstance) {
 
   fastify.addHook('onRequest', async () => {
     const randomValue = Math.random() * 100;
-    console.log('randomValue', randomValue);
-    console.log('rate', rate);
     if (randomValue < rate) {
       fastify.log.info(
         `Random error thrown with ${rate}% error rate and status code ${statusCode}`,

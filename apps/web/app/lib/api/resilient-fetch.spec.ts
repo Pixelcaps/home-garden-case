@@ -89,4 +89,26 @@ describe('resilientFetch', () => {
     await resilientFetch('/gardens', { ...opts, token: 'dev-secret' });
     expect(auth).toBe('Bearer dev-secret');
   });
+
+  it('204 returns undefined', async () => {
+    server.use(
+      http.get(`${BASE}/gardens`, () => new HttpResponse(null, { status: 204 })),
+    );
+    const data = await resilientFetch('/gardens', opts);
+    expect(data).toBeUndefined();
+  });
+
+  it('network errors are retried then succeed', async () => {
+    let calls = 0;
+    server.use(
+      http.get(`${BASE}/gardens`, () => {
+        calls += 1;
+        if (calls < 3) return HttpResponse.error();
+        return HttpResponse.json([{ gardenId: 1 }]);
+      }),
+    );
+    const data = await resilientFetch<{ gardenId: number }[]>('/gardens', opts);
+    expect(data).toEqual([{ gardenId: 1 }]);
+    expect(calls).toBeGreaterThan(1);
+  });
 });

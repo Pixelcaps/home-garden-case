@@ -2,6 +2,7 @@ import { GardenRepository } from '../database/repositories/garden.repository';
 import { PlantRepository } from '../database/repositories/plant.repository';
 import { NewPlant, Plant, PlantUpdate } from '../database/types';
 import { createPlantSchema, updatePlantSchema } from '../schemas/plant.schema';
+import { MAX_HUMIDITY_DELTA } from '../shared/constants';
 import { NotFoundError, ValidationError } from '../shared/errors';
 
 export class PlantService {
@@ -11,6 +12,25 @@ export class PlantService {
   constructor(opts: { plantRepository: PlantRepository; gardenRepository: GardenRepository }) {
     this.plantRepository = opts.plantRepository;
     this.gardenRepository = opts.gardenRepository;
+  }
+
+  /**
+   * Ensure a plant's ideal humidity sits within MAX_HUMIDITY_DELTA of the garden's target.
+   * @throws ValidationError if it does not
+   */
+  private assertHumidityFits(
+    targetHumidity: number,
+    idealHumidity: number,
+    verb: 'add' | 'update',
+  ): void {
+    if (Math.abs(targetHumidity - idealHumidity) <= MAX_HUMIDITY_DELTA) {
+      return;
+    }
+    throw new ValidationError(
+      `Cannot ${verb} plant: ideal humidity (${idealHumidity}%) must be within ` +
+        `${MAX_HUMIDITY_DELTA}% of the garden's target humidity (${targetHumidity}%). ` +
+        `Allowed range is ${targetHumidity - MAX_HUMIDITY_DELTA}–${targetHumidity + MAX_HUMIDITY_DELTA}%.`,
+    );
   }
 
   /**
@@ -53,6 +73,9 @@ export class PlantService {
       throw new NotFoundError(`Garden with ID ${validatedData.gardenId} not found`);
     }
 
+    // Check humidity compatibility (garden target vs plant ideal)
+    this.assertHumidityFits(garden.targetHumidity, validatedData.idealHumidityLevel, 'add');
+
     // Check if total surface area would be exceeded
     const existingPlants = await this.plantRepository.findByGardenId(validatedData.gardenId);
     const totalUsedArea = existingPlants.reduce((sum, plant) => sum + plant.surfaceAreaRequired, 0);
@@ -88,6 +111,16 @@ export class PlantService {
       if (!newGarden) {
         throw new ValidationError(`Garden with ID ${validatedData.gardenId} not found`);
       }
+    }
+
+    // Check humidity compatibility if humidity or garden is being updated
+    if (validatedData.idealHumidityLevel !== undefined || validatedData.gardenId !== undefined) {
+      const humidityGarden = await this.gardenRepository.findById(targetGardenId);
+      if (!humidityGarden) {
+        throw new ValidationError(`Garden with ID ${targetGardenId} not found`);
+      }
+      const finalHumidity = validatedData.idealHumidityLevel ?? existingPlant.idealHumidityLevel;
+      this.assertHumidityFits(humidityGarden.targetHumidity, finalHumidity, 'update');
     }
 
     // Check surface area constraints if surface area or garden is being updated

@@ -100,6 +100,7 @@
   "dependencies": {
     "@fastify/autoload": "~6.0.3",
     "@fastify/awilix": "^8.0.0",
+    "@fastify/bearer-auth": "^10.0.0",
     "@fastify/sensible": "~6.0.2",
     "@fastify/swagger": "^9.5.2",
     "@fastify/swagger-ui": "^5.2.3",

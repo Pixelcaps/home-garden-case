@@ -13,17 +13,33 @@ async function up(db: Kysely<Database>) {
     .addColumn('updatedAt', 'text', (col) => col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull())
     .execute();
 
+  await db
+    .insertInto('user')
+    .values({
+      userId: 1,
+      emailAddress: 'home.gardener@example.com',
+      firstName: 'Home',
+      lastName: 'Gardener',
+    })
+    .execute();
+
   await db.schema
     .createTable('garden')
     .addColumn('gardenId', 'integer', (col) => col.primaryKey().autoIncrement())
     .addColumn('gardenName', 'text', (col) => col.notNull())
     .addColumn('totalSurfaceArea', 'real', (col) => col.notNull())
+    .addColumn('targetHumidity', 'real', (col) => col.notNull())
     .addColumn('locationDescription', 'text')
     .addColumn('latitude', 'real')
     .addColumn('longitude', 'real')
+    .addColumn('userId', 'integer', (col) =>
+      col.references('user.userId').onDelete('cascade').notNull(),
+    )
     .addColumn('createdAt', 'text', (col) => col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull())
     .addColumn('updatedAt', 'text', (col) => col.defaultTo(sql`CURRENT_TIMESTAMP`).notNull())
     .execute();
+
+  await db.schema.createIndex('garden_user_id_index').on('garden').column('userId').execute();
 
   await db.schema
     .createTable('plant')

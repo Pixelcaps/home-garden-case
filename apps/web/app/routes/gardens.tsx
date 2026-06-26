@@ -1,7 +1,8 @@
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError } from 'react-router';
 import { usedArea, type Garden } from '@itp-home-garden/shared';
 import { apiConfig } from '../lib/api/config';
-import { getGardensByUser, getPlantsByGarden } from '../lib/api/garden-api';
+import { createGarden, getGardensByUser, getPlantsByGarden } from '../lib/api/garden-api';
+import { actionError, gardenInputFromForm } from '../lib/forms';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { Meter } from '../components/ui/Meter';
@@ -9,6 +10,20 @@ import { Meter } from '../components/ui/Meter';
 interface GardenCard extends Garden {
   usedArea: number;
   plantCount: number;
+}
+
+export async function action({ request }: { request: Request }) {
+  const form = await request.formData();
+  const intent = form.get('intent');
+  if (intent === 'create-garden') {
+    try {
+      await createGarden(gardenInputFromForm(form, apiConfig.defaultUserId));
+      return { ok: true };
+    } catch (err) {
+      return actionError(err);
+    }
+  }
+  return { error: 'Unknown action' };
 }
 
 export async function loader() {

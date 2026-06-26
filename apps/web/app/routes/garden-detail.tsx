@@ -1,12 +1,23 @@
 import {
   Link,
+  redirect,
+  type ActionFunctionArgs,
   type LoaderFunctionArgs,
   isRouteErrorResponse,
   useLoaderData,
   useRouteError,
 } from 'react-router';
 import { usedArea, type PlantType } from '@itp-home-garden/shared';
-import { getGarden, getPlantsByGarden } from '../lib/api/garden-api';
+import {
+  createPlant,
+  deleteGarden,
+  deletePlant,
+  getGarden,
+  getPlantsByGarden,
+  updateGarden,
+  updatePlant,
+} from '../lib/api/garden-api';
+import { actionError, gardenUpdateFromForm, plantInputFromForm } from '../lib/forms';
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { Meter } from '../components/ui/Meter';
@@ -16,6 +27,35 @@ const typeTone: Record<PlantType, 'vegetable' | 'fruit' | 'flower'> = {
   fruit: 'fruit',
   flower: 'flower',
 };
+
+export async function action({ request, params }: ActionFunctionArgs) {
+  const gardenId = Number(params.gardenId);
+  const form = await request.formData();
+  const intent = form.get('intent');
+  try {
+    switch (intent) {
+      case 'update-garden':
+        await updateGarden(gardenId, gardenUpdateFromForm(form));
+        return { ok: true };
+      case 'delete-garden':
+        await deleteGarden(gardenId);
+        return redirect('/gardens');
+      case 'create-plant':
+        await createPlant(plantInputFromForm(form, gardenId));
+        return { ok: true };
+      case 'update-plant':
+        await updatePlant(Number(form.get('plantId')), plantInputFromForm(form, gardenId));
+        return { ok: true };
+      case 'delete-plant':
+        await deletePlant(Number(form.get('plantId')));
+        return { ok: true };
+      default:
+        return { error: 'Unknown action' };
+    }
+  } catch (err) {
+    return actionError(err);
+  }
+}
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const gardenId = Number(params.gardenId);

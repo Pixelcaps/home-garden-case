@@ -160,11 +160,6 @@ export default function GardenDetailRoute() {
                 <div>
                   <div className="font-medium">{plant.plantName}</div>
                   <div className="text-xs text-gray-500">{plant.species}</div>
-                  {!inBand ? (
-                    <div className="mt-0.5 text-xs text-red-600">
-                      Ideal humidity outside the {bandLabel} band
-                    </div>
-                  ) : null}
                 </div>
                 <Badge tone={typeTone[plant.plantType]}>{plant.plantType}</Badge>
                 <div className="text-right tabular-nums">{plant.surfaceAreaRequired} m²</div>

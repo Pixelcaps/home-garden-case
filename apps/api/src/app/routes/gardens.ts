@@ -14,6 +14,7 @@ import {
   updateGardenSchema,
 } from '../schemas/garden.schema';
 import { emptyResponseSchema } from '../schemas/general.schema';
+import { userIdParamsSchema } from '../schemas/user.schema';
 import { GardenService } from '../services/garden.service';
 
 export default async function (fastify: FastifyInstance) {
@@ -63,6 +64,31 @@ export default async function (fastify: FastifyInstance) {
     async (request, reply) => {
       const garden = await gardenService.getGardenById(request.params.gardenId);
       return reply.send(garden);
+    },
+  );
+
+  /**
+   * GET /gardens/user/:userId
+   * Get all gardens owned by a user
+   * (Fastify prioritises the static `user` segment over `:gardenId`, so order is safe.)
+   */
+  fastify.withTypeProvider<ZodTypeProvider>().get<{ Params: z.infer<typeof userIdParamsSchema> }>(
+    '/gardens/user/:userId',
+    {
+      schema: {
+        description: 'Get all gardens owned by a user',
+        tags: ['gardens'],
+        params: userIdParamsSchema,
+        response: {
+          200: gardensResponseSchema,
+          400: validationErrorResponseSchema,
+          500: internalServerErrorResponseSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      const gardens = await gardenService.getGardensByUserId(request.params.userId);
+      return reply.send(gardens);
     },
   );
 

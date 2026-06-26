@@ -27,6 +27,17 @@ export class GardenRepository {
   }
 
   /**
+   * Find all gardens owned by a user
+   */
+  async findByUserId(userId: number): Promise<Garden[]> {
+    return await this.db
+      .selectFrom('garden')
+      .where('userId', '=', userId)
+      .selectAll()
+      .execute();
+  }
+
+  /**
    * Create a new garden
    */
   async create(data: NewGarden): Promise<Garden> {

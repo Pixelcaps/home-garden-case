@@ -18,6 +18,13 @@ export class GardenService {
   }
 
   /**
+   * Get all gardens owned by a user
+   */
+  async getGardensByUserId(userId: number): Promise<Garden[]> {
+    return await this.gardenRepository.findByUserId(userId);
+  }
+
+  /**
    * Get a garden by ID
    * @throws Error if garden not found
    */

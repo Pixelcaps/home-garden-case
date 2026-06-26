@@ -9,6 +9,7 @@ import {
 } from 'react-router';
 
 import { AppNav } from './app-nav';
+import stylesheet from './app.css?url';
 
 export const meta: MetaFunction = () => [
   {
@@ -17,6 +18,7 @@ export const meta: MetaFunction = () => [
 ];
 
 export const links: LinksFunction = () => [
+  { rel: 'stylesheet', href: stylesheet },
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
   {
     rel: 'preconnect',

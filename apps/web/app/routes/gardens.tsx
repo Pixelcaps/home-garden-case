@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Link, isRouteErrorResponse, useLoaderData, useRouteError } from 'react-router';
 import { usedArea, type Garden } from '@itp-home-garden/shared';
+import { GardenFormDialog } from '../components/GardenFormDialog';
+import { Button } from '../components/ui/Button';
 import { apiConfig } from '../lib/api/config';
 import { createGarden, getGardensByUser, getPlantsByGarden } from '../lib/api/garden-api';
 import { actionError, gardenInputFromForm } from '../lib/forms';
@@ -41,10 +44,14 @@ export async function loader() {
 
 export default function GardensRoute() {
   const { gardens } = useLoaderData<typeof loader>();
+  const [creating, setCreating] = useState(false);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
-      <h1 className="mb-6 text-xl font-medium">Your gardens</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-medium">Your gardens</h1>
+        <Button variant="accent" onClick={() => setCreating(true)}>+ New garden</Button>
+      </div>
 
       {gardens.length === 0 ? (
         <Card className="text-center text-gray-600">
@@ -71,6 +78,7 @@ export default function GardensRoute() {
           ))}
         </div>
       )}
+      <GardenFormDialog open={creating} onClose={() => setCreating(false)} mode="create" />
     </main>
   );
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Link,
   redirect,
@@ -7,6 +8,8 @@ import {
   useLoaderData,
   useRouteError,
 } from 'react-router';
+import { GardenFormDialog } from '../components/GardenFormDialog';
+import { Button } from '../components/ui/Button';
 import { usedArea, type PlantType } from '@itp-home-garden/shared';
 import {
   createPlant,
@@ -70,6 +73,7 @@ export default function GardenDetailRoute() {
   const { garden, plants } = useLoaderData<typeof loader>();
   const used = usedArea(plants);
   const free = Math.round((garden.totalSurfaceArea - used) * 100) / 100;
+  const [editing, setEditing] = useState(false);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
@@ -77,10 +81,13 @@ export default function GardenDetailRoute() {
         ← Your gardens
       </Link>
 
-      <h1 className="mt-3 text-xl font-medium">{garden.gardenName}</h1>
-      {garden.locationDescription ? (
-        <p className="text-sm text-gray-600">{garden.locationDescription}</p>
-      ) : null}
+      <div className="mt-3 flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-medium">{garden.gardenName}</h1>
+          {garden.locationDescription ? <p className="text-sm text-gray-600">{garden.locationDescription}</p> : null}
+        </div>
+        <Button onClick={() => setEditing(true)}>Edit</Button>
+      </div>
 
       <Card className="mt-4 bg-gray-50">
         <Meter used={used} total={garden.totalSurfaceArea} />
@@ -121,6 +128,7 @@ export default function GardenDetailRoute() {
           ))}
         </div>
       )}
+      <GardenFormDialog open={editing} onClose={() => setEditing(false)} mode="edit" garden={garden} />
     </main>
   );
 }

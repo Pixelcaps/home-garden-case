@@ -97,7 +97,7 @@ export default function GardenDetailRoute() {
         </div>
       </div>
 
-      <Card className="mt-4 bg-gray-50">
+      <Card className="mt-4">
         <Meter used={used} total={garden.totalSurfaceArea} />
         <div className="mt-3 flex gap-6 text-sm">
           <div>

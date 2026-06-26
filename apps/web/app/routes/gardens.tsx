@@ -65,9 +65,9 @@ export default function GardensRoute() {
               <Link key={garden.gardenId} to={`/gardens/${garden.gardenId}`} className="block">
                 <Card className="flex h-full flex-col gap-3 hover:border-gray-300">
                   <div className="text-base font-medium">{garden.gardenName}</div>
-                  {garden.locationDescription ? (
-                    <div className="text-sm text-gray-600">{garden.locationDescription}</div>
-                  ) : null}
+                  {/* Always render the location line so cards with and without a
+                      location keep the meter + badges vertically aligned. */}
+                  <div className="min-h-[1.25rem] text-sm text-gray-600">{garden.locationDescription || ' '}</div>
                   <Meter used={garden.usedArea} total={garden.totalSurfaceArea} />
                   <div className="mt-1 flex items-center gap-2">
                     <Badge>Target {garden.targetHumidity}%</Badge>

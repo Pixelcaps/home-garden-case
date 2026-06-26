@@ -12,13 +12,7 @@ import { GardenFormDialog } from '../components/GardenFormDialog';
 import { PlantFormDialog } from '../components/PlantFormDialog';
 import { ConfirmDeleteDialog } from '../components/ConfirmDeleteDialog';
 import { Button } from '../components/ui/Button';
-import {
-  checkHumidity,
-  humidityBand,
-  usedArea,
-  type Plant,
-  type PlantType,
-} from '@itp-home-garden/shared';
+import { checkHumidity, humidityBand, usedArea, type Plant } from '@itp-home-garden/shared';
 import {
   createPlant,
   deleteGarden,
@@ -32,12 +26,6 @@ import { actionError, gardenUpdateFromForm, plantInputFromForm } from '../lib/fo
 import { Badge } from '../components/ui/Badge';
 import { Card } from '../components/ui/Card';
 import { Meter } from '../components/ui/Meter';
-
-const typeTone: Record<PlantType, 'vegetable' | 'fruit' | 'flower'> = {
-  vegetable: 'vegetable',
-  fruit: 'fruit',
-  flower: 'flower',
-};
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const gardenId = Number(params.gardenId);
@@ -161,7 +149,7 @@ export default function GardenDetailRoute() {
                   <div className="font-medium">{plant.plantName}</div>
                   <div className="text-xs text-gray-500">{plant.species}</div>
                 </div>
-                <Badge tone={typeTone[plant.plantType]}>{plant.plantType}</Badge>
+                <Badge tone={plant.plantType}>{plant.plantType}</Badge>
                 <div className="text-right tabular-nums">{plant.surfaceAreaRequired} m²</div>
                 <div
                   className={`text-right tabular-nums ${inBand ? '' : 'font-medium text-red-600'}`}

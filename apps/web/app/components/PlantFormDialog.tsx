@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useFetcher } from 'react-router';
+import { useState } from 'react';
 import { checkArea, checkHumidity, type Garden, type Plant, type PlantType } from '@itp-home-garden/shared';
 import { Button } from './ui/Button';
 import { Dialog } from './ui/Dialog';
 import { Field } from './ui/Field';
 import { Meter } from './ui/Meter';
+import { useDialogFetcher } from './useDialogFetcher';
 
 interface Props {
   open: boolean;
@@ -18,8 +18,7 @@ interface Props {
 const PLANT_TYPES: PlantType[] = ['vegetable', 'fruit', 'flower'];
 
 export function PlantFormDialog({ open, onClose, mode, garden, plants, plant }: Props) {
-  const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
-  const busy = fetcher.state !== 'idle';
+  const { fetcher, busy } = useDialogFetcher(onClose);
 
   const [area, setArea] = useState(plant?.surfaceAreaRequired ?? 0);
   const [humidity, setHumidity] = useState(plant?.idealHumidityLevel ?? garden.targetHumidity);
@@ -27,10 +26,6 @@ export function PlantFormDialog({ open, onClose, mode, garden, plants, plant }: 
   const areaCheck = checkArea(garden.totalSurfaceArea, plants, area, plant?.plantId);
   const humidityCheck = checkHumidity(garden.targetHumidity, humidity);
   const valid = areaCheck.fits && humidityCheck.ok;
-
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose();
-  }, [fetcher.state, fetcher.data, onClose]);
 
   return (
     <Dialog open={open} onClose={onClose} title={mode === 'create' ? 'Add plant' : 'Edit plant'}>

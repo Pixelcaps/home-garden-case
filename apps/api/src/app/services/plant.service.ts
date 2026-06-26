@@ -15,6 +15,25 @@ export class PlantService {
   }
 
   /**
+   * Ensure a plant's ideal humidity sits within MAX_HUMIDITY_DELTA of the garden's target.
+   * @throws ValidationError if it does not
+   */
+  private assertHumidityFits(
+    targetHumidity: number,
+    idealHumidity: number,
+    verb: 'add' | 'update',
+  ): void {
+    if (Math.abs(targetHumidity - idealHumidity) <= MAX_HUMIDITY_DELTA) {
+      return;
+    }
+    throw new ValidationError(
+      `Cannot ${verb} plant: ideal humidity (${idealHumidity}%) must be within ` +
+        `${MAX_HUMIDITY_DELTA}% of the garden's target humidity (${targetHumidity}%). ` +
+        `Allowed range is ${targetHumidity - MAX_HUMIDITY_DELTA}–${targetHumidity + MAX_HUMIDITY_DELTA}%.`,
+    );
+  }
+
+  /**
    * Get a plant by ID
    * @throws Error if plant not found
    */
@@ -55,14 +74,7 @@ export class PlantService {
     }
 
     // Check humidity compatibility (garden target vs plant ideal)
-    const humidityDelta = Math.abs(garden.targetHumidity - validatedData.idealHumidityLevel);
-    if (humidityDelta > MAX_HUMIDITY_DELTA) {
-      throw new ValidationError(
-        `Cannot add plant: ideal humidity (${validatedData.idealHumidityLevel}%) must be within ` +
-          `${MAX_HUMIDITY_DELTA}% of the garden's target humidity (${garden.targetHumidity}%). ` +
-          `Allowed range is ${garden.targetHumidity - MAX_HUMIDITY_DELTA}–${garden.targetHumidity + MAX_HUMIDITY_DELTA}%.`,
-      );
-    }
+    this.assertHumidityFits(garden.targetHumidity, validatedData.idealHumidityLevel, 'add');
 
     // Check if total surface area would be exceeded
     const existingPlants = await this.plantRepository.findByGardenId(validatedData.gardenId);
@@ -108,14 +120,7 @@ export class PlantService {
         throw new ValidationError(`Garden with ID ${targetGardenId} not found`);
       }
       const finalHumidity = validatedData.idealHumidityLevel ?? existingPlant.idealHumidityLevel;
-      const humidityDelta = Math.abs(humidityGarden.targetHumidity - finalHumidity);
-      if (humidityDelta > MAX_HUMIDITY_DELTA) {
-        throw new ValidationError(
-          `Cannot update plant: ideal humidity (${finalHumidity}%) must be within ` +
-            `${MAX_HUMIDITY_DELTA}% of the garden's target humidity (${humidityGarden.targetHumidity}%). ` +
-            `Allowed range is ${humidityGarden.targetHumidity - MAX_HUMIDITY_DELTA}–${humidityGarden.targetHumidity + MAX_HUMIDITY_DELTA}%.`,
-        );
-      }
+      this.assertHumidityFits(humidityGarden.targetHumidity, finalHumidity, 'update');
     }
 
     // Check surface area constraints if surface area or garden is being updated

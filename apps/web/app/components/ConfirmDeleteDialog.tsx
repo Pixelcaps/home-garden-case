@@ -1,7 +1,6 @@
-import { useEffect } from 'react';
-import { useFetcher } from 'react-router';
 import { Button } from './ui/Button';
 import { Dialog } from './ui/Dialog';
+import { useDialogFetcher } from './useDialogFetcher';
 
 interface Props {
   open: boolean;
@@ -13,12 +12,7 @@ interface Props {
 }
 
 export function ConfirmDeleteDialog({ open, onClose, title, message, intent, hiddenFields }: Props) {
-  const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
-  const busy = fetcher.state !== 'idle';
-
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose();
-  }, [fetcher.state, fetcher.data, onClose]);
+  const { fetcher, busy } = useDialogFetcher(onClose);
 
   return (
     <Dialog open={open} onClose={onClose} title={title}>

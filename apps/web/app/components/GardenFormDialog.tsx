@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import { useFetcher } from 'react-router';
+import { useState } from 'react';
 import type { Garden } from '@itp-home-garden/shared';
 import { Button } from './ui/Button';
 import { Dialog } from './ui/Dialog';
 import { Field } from './ui/Field';
+import { useDialogFetcher } from './useDialogFetcher';
 
 interface Props {
   open: boolean;
@@ -15,18 +15,13 @@ interface Props {
 const coord = (value: number | null | undefined) => (value == null ? '' : String(value));
 
 export function GardenFormDialog({ open, onClose, mode, garden }: Props) {
-  const fetcher = useFetcher<{ ok?: boolean; error?: string }>();
-  const busy = fetcher.state !== 'idle';
+  const { fetcher, busy } = useDialogFetcher(onClose);
 
   // Latitude/longitude are controlled so we can mirror the server's "both or
   // neither" rule live; everything else is uncontrolled (defaultValue).
   const [latitude, setLatitude] = useState(coord(garden?.latitude));
   const [longitude, setLongitude] = useState(coord(garden?.longitude));
   const coordsPaired = (latitude.trim() === '') === (longitude.trim() === '');
-
-  useEffect(() => {
-    if (fetcher.state === 'idle' && fetcher.data?.ok) onClose();
-  }, [fetcher.state, fetcher.data, onClose]);
 
   return (
     <Dialog open={open} onClose={onClose} title={mode === 'create' ? 'New garden' : 'Edit garden'}>

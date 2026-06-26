@@ -49,17 +49,17 @@ export function plantInputFromForm(form: FormData, gardenId: number): PlantInput
 }
 
 export function actionError(err: unknown): { error: string } {
-  if (err instanceof ApiError) {
-    if (err.status < 500) {
-      try {
-        const body = JSON.parse(err.message);
-        const message = Array.isArray(body.details) ? body.details.join(', ') : body.error;
-        return { error: message || err.message };
-      } catch {
-        return { error: err.message };
-      }
-    }
+  if (!(err instanceof ApiError)) {
+    return { error: 'Something went wrong. Please try again.' };
+  }
+  if (err.status >= 500) {
     return { error: 'The garden service is busy right now. Please try again.' };
   }
-  return { error: 'Something went wrong. Please try again.' };
+  try {
+    const body = JSON.parse(err.message);
+    const message = Array.isArray(body.details) ? body.details.join(', ') : body.error;
+    return { error: message || err.message };
+  } catch {
+    return { error: err.message };
+  }
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, isRouteErrorResponse, useLoaderData, useRouteError } from 'react-router';
+import { Link, isRouteErrorResponse, useLoaderData, useNavigation, useRouteError } from 'react-router';
 import { usedArea, type Garden } from '@itp-home-garden/shared';
 import { GardenFormDialog } from '../components/GardenFormDialog';
 import { Button } from '../components/ui/Button';
@@ -45,6 +45,7 @@ export async function loader() {
 export default function GardensRoute() {
   const { gardens } = useLoaderData<typeof loader>();
   const [creating, setCreating] = useState(false);
+  const navigation = useNavigation();
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
@@ -53,31 +54,33 @@ export default function GardensRoute() {
         <Button variant="accent" onClick={() => setCreating(true)}>+ New garden</Button>
       </div>
 
-      {gardens.length === 0 ? (
-        <Card className="text-center text-gray-600">
-          No gardens yet. Create your first garden to start planting.
-        </Card>
-      ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
-          {gardens.map((garden) => (
-            <Link key={garden.gardenId} to={`/gardens/${garden.gardenId}`} className="block">
-              <Card className="flex h-full flex-col gap-3 hover:border-gray-300">
-                <div className="text-base font-medium">{garden.gardenName}</div>
-                {garden.locationDescription ? (
-                  <div className="text-sm text-gray-600">{garden.locationDescription}</div>
-                ) : null}
-                <Meter used={garden.usedArea} total={garden.totalSurfaceArea} />
-                <div className="mt-1 flex items-center gap-2">
-                  <Badge>Target {garden.targetHumidity}%</Badge>
-                  <Badge>
-                    {garden.plantCount} {garden.plantCount === 1 ? 'plant' : 'plants'}
-                  </Badge>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      )}
+      <div className={navigation.state === 'loading' ? 'opacity-60 transition-opacity' : ''}>
+        {gardens.length === 0 ? (
+          <Card className="text-center text-gray-600">
+            No gardens yet. Create your first garden to start planting.
+          </Card>
+        ) : (
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] gap-4">
+            {gardens.map((garden) => (
+              <Link key={garden.gardenId} to={`/gardens/${garden.gardenId}`} className="block">
+                <Card className="flex h-full flex-col gap-3 hover:border-gray-300">
+                  <div className="text-base font-medium">{garden.gardenName}</div>
+                  {garden.locationDescription ? (
+                    <div className="text-sm text-gray-600">{garden.locationDescription}</div>
+                  ) : null}
+                  <Meter used={garden.usedArea} total={garden.totalSurfaceArea} />
+                  <div className="mt-1 flex items-center gap-2">
+                    <Badge>Target {garden.targetHumidity}%</Badge>
+                    <Badge>
+                      {garden.plantCount} {garden.plantCount === 1 ? 'plant' : 'plants'}
+                    </Badge>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
       {creating ? <GardenFormDialog open onClose={() => setCreating(false)} mode="create" /> : null}
     </main>
   );

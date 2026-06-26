@@ -10,6 +10,7 @@ import {
 } from 'react-router';
 import { GardenFormDialog } from '../components/GardenFormDialog';
 import { PlantFormDialog } from '../components/PlantFormDialog';
+import { ConfirmDeleteDialog } from '../components/ConfirmDeleteDialog';
 import { Button } from '../components/ui/Button';
 import { usedArea, type Plant, type PlantType } from '@itp-home-garden/shared';
 import {
@@ -76,6 +77,8 @@ export default function GardenDetailRoute() {
   const free = Math.round((garden.totalSurfaceArea - used) * 100) / 100;
   const [editing, setEditing] = useState(false);
   const [plantDialog, setPlantDialog] = useState<{ mode: 'create' | 'edit'; plant?: Plant } | null>(null);
+  const [deleteGarden, setDeleteGarden] = useState(false);
+  const [deletePlant, setDeletePlant] = useState<Plant | null>(null);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
@@ -88,7 +91,10 @@ export default function GardenDetailRoute() {
           <h1 className="text-xl font-medium">{garden.gardenName}</h1>
           {garden.locationDescription ? <p className="text-sm text-gray-600">{garden.locationDescription}</p> : null}
         </div>
-        <Button onClick={() => setEditing(true)}>Edit</Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setEditing(true)}>Edit</Button>
+          <Button variant="danger" onClick={() => setDeleteGarden(true)}>Delete</Button>
+        </div>
       </div>
 
       <Card className="mt-4 bg-gray-50">
@@ -129,7 +135,10 @@ export default function GardenDetailRoute() {
               <Badge tone={typeTone[plant.plantType]}>{plant.plantType}</Badge>
               <div className="text-right tabular-nums">{plant.surfaceAreaRequired} m²</div>
               <div className="text-right tabular-nums">{plant.idealHumidityLevel}%</div>
-              <Button onClick={() => setPlantDialog({ mode: 'edit', plant })}>Edit</Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setPlantDialog({ mode: 'edit', plant })}>Edit</Button>
+                <Button variant="danger" onClick={() => setDeletePlant(plant)}>Delete</Button>
+              </div>
             </div>
           ))}
         </div>
@@ -143,6 +152,23 @@ export default function GardenDetailRoute() {
           garden={garden}
           plants={plants}
           plant={plantDialog.plant}
+        />
+      ) : null}
+      <ConfirmDeleteDialog
+        open={deleteGarden}
+        onClose={() => setDeleteGarden(false)}
+        title="Delete garden"
+        message={`Delete "${garden.gardenName}" and all its plants? This cannot be undone.`}
+        intent="delete-garden"
+      />
+      {deletePlant ? (
+        <ConfirmDeleteDialog
+          open
+          onClose={() => setDeletePlant(null)}
+          title="Delete plant"
+          message={`Remove "${deletePlant.plantName}" from this garden?`}
+          intent="delete-plant"
+          hiddenFields={{ plantId: String(deletePlant.plantId) }}
         />
       ) : null}
     </main>

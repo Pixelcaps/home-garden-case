@@ -10,6 +10,7 @@ import {
 
 import { AppNav } from './app-nav';
 import stylesheet from './app.css?url';
+import { ToastProvider } from './components/ui/Toast';
 
 export const meta: MetaFunction = () => [
   {
@@ -41,8 +42,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <AppNav />
-        {children}
+        <ToastProvider>
+          <AppNav />
+          {children}
+        </ToastProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

@@ -5,14 +5,15 @@ interface Entry {
 
 const store = new Map<string, Entry>();
 
-export function getCached<T>(key: string): T | undefined {
+/**
+ * Return the cached entry if present, with whether it is still fresh. Stale
+ * entries are kept (not deleted) so the caller can serve them while a
+ * background refresh runs (stale-while-revalidate).
+ */
+export function peek<T>(key: string): { value: T; fresh: boolean } | undefined {
   const entry = store.get(key);
   if (!entry) return undefined;
-  if (Date.now() > entry.expiresAt) {
-    store.delete(key);
-    return undefined;
-  }
-  return entry.value as T;
+  return { value: entry.value as T, fresh: Date.now() <= entry.expiresAt };
 }
 
 export function setCached(key: string, value: unknown, ttlMs: number): void {

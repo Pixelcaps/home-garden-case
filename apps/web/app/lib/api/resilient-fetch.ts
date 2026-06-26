@@ -1,4 +1,4 @@
-import { getCached, setCached, clearCache } from './cache';
+import { peek, setCached, clearCache } from './cache';
 
 export class ApiError extends Error {
   constructor(
@@ -36,8 +36,15 @@ export async function resilientFetch<T>(path: string, options: ResilientOptions 
   const isGet = method === 'GET';
 
   if (isGet) {
-    const cached = getCached<T>(cacheKey);
-    if (cached !== undefined) return cached;
+    const hit = peek<T>(cacheKey);
+    if (hit?.fresh) return hit.value;
+    if (hit) {
+      // Stale-while-revalidate: serve the stale value immediately and refresh
+      // it in the background so the next read is fresh — the user never waits
+      // on the slow API once an entry has been populated.
+      refresh<T>(url, method, options, cacheKey);
+      return hit.value;
+    }
     const pending = inFlight.get(cacheKey);
     if (pending) return pending as Promise<T>;
   }
@@ -53,6 +60,19 @@ export async function resilientFetch<T>(path: string, options: ResilientOptions 
     }
   }
   return run;
+}
+
+/**
+ * Fire-and-forget background refresh for a stale cache entry. De-duped via the
+ * in-flight map so concurrent stale reads trigger only one refresh, and errors
+ * are swallowed — a failed refresh leaves the existing (stale) value in place,
+ * so the next read serves stale and tries again (self-healing).
+ */
+function refresh<T>(url: string, method: string, options: ResilientOptions, cacheKey: string): void {
+  if (inFlight.has(cacheKey)) return;
+  const run = execute<T>(url, method, options, true, cacheKey);
+  inFlight.set(cacheKey, run);
+  run.catch(() => undefined).finally(() => inFlight.delete(cacheKey));
 }
 
 async function execute<T>(

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { getCached, setCached, clearCache } from './cache';
+import { peek, setCached, clearCache } from './cache';
 
 afterEach(() => {
   clearCache();
@@ -7,21 +7,21 @@ afterEach(() => {
 });
 
 describe('cache', () => {
-  it('returns a stored value before it expires', () => {
+  it('returns a fresh entry before it expires', () => {
     vi.spyOn(Date, 'now').mockReturnValue(1000);
     setCached('k', { a: 1 }, 5000);
     vi.spyOn(Date, 'now').mockReturnValue(2000);
-    expect(getCached('k')).toEqual({ a: 1 });
+    expect(peek('k')).toEqual({ value: { a: 1 }, fresh: true });
   });
 
-  it('returns undefined after the TTL passes', () => {
+  it('returns the value marked stale after the TTL passes', () => {
     vi.spyOn(Date, 'now').mockReturnValue(1000);
     setCached('k', { a: 1 }, 5000);
     vi.spyOn(Date, 'now').mockReturnValue(7000);
-    expect(getCached('k')).toBeUndefined();
+    expect(peek('k')).toEqual({ value: { a: 1 }, fresh: false });
   });
 
   it('returns undefined for an unknown key', () => {
-    expect(getCached('missing')).toBeUndefined();
+    expect(peek('missing')).toBeUndefined();
   });
 });

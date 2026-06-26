@@ -112,3 +112,69 @@ describe('resilientFetch', () => {
     expect(calls).toBeGreaterThan(1);
   });
 });
+
+describe('stale-while-revalidate', () => {
+  it('serves stale data immediately and refreshes in the background', async () => {
+    let calls = 0;
+    let body = 'v1';
+    server.use(
+      http.get(`${BASE}/g`, () => {
+        calls += 1;
+        return HttpResponse.json(body);
+      }),
+    );
+    const now = vi.spyOn(Date, 'now');
+    now.mockReturnValue(1_000);
+
+    expect(await resilientFetch('/g', opts)).toBe('v1'); // cold fetch caches v1 (fresh)
+    expect(calls).toBe(1);
+
+    now.mockReturnValue(1_000 + 31_000); // past the 30s TTL → stale
+    body = 'v2';
+    expect(await resilientFetch('/g', opts)).toBe('v1'); // stale served immediately
+    await vi.waitFor(() => expect(calls).toBe(2)); // background refresh ran
+
+    expect(await resilientFetch('/g', opts)).toBe('v2'); // cache now fresh with v2
+  });
+
+  it('fires only one background refresh for concurrent stale reads', async () => {
+    let calls = 0;
+    server.use(
+      http.get(`${BASE}/g`, () => {
+        calls += 1;
+        return HttpResponse.json('v');
+      }),
+    );
+    const now = vi.spyOn(Date, 'now');
+    now.mockReturnValue(1_000);
+    await resilientFetch('/g', opts); // calls = 1
+    now.mockReturnValue(1_000 + 31_000); // stale
+
+    await Promise.all([
+      resilientFetch('/g', opts),
+      resilientFetch('/g', opts),
+      resilientFetch('/g', opts),
+    ]);
+    await vi.waitFor(() => expect(calls).toBe(2)); // one refresh, not three
+    await new Promise((r) => setTimeout(r, 20));
+    expect(calls).toBe(2); // and no extra refreshes leaked in
+  });
+
+  it('keeps serving stale data when the background refresh fails', async () => {
+    let calls = 0;
+    server.use(
+      http.get(`${BASE}/g`, () => {
+        calls += 1;
+        return calls === 1 ? HttpResponse.json('v1') : new HttpResponse(null, { status: 500 });
+      }),
+    );
+    const now = vi.spyOn(Date, 'now');
+    now.mockReturnValue(1_000);
+    await resilientFetch('/g', opts); // v1 cached
+    now.mockReturnValue(1_000 + 31_000); // stale
+
+    expect(await resilientFetch('/g', opts)).toBe('v1'); // stale served; bg refresh will 500
+    await vi.waitFor(() => expect(calls).toBeGreaterThanOrEqual(2)); // refresh attempted
+    expect(await resilientFetch('/g', opts)).toBe('v1'); // still stale (failed refresh kept old value)
+  });
+});

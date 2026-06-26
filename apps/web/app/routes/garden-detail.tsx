@@ -9,8 +9,9 @@ import {
   useRouteError,
 } from 'react-router';
 import { GardenFormDialog } from '../components/GardenFormDialog';
+import { PlantFormDialog } from '../components/PlantFormDialog';
 import { Button } from '../components/ui/Button';
-import { usedArea, type PlantType } from '@itp-home-garden/shared';
+import { usedArea, type Plant, type PlantType } from '@itp-home-garden/shared';
 import {
   createPlant,
   deleteGarden,
@@ -74,6 +75,7 @@ export default function GardenDetailRoute() {
   const used = usedArea(plants);
   const free = Math.round((garden.totalSurfaceArea - used) * 100) / 100;
   const [editing, setEditing] = useState(false);
+  const [plantDialog, setPlantDialog] = useState<{ mode: 'create' | 'edit'; plant?: Plant } | null>(null);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
@@ -107,7 +109,10 @@ export default function GardenDetailRoute() {
         </div>
       </Card>
 
-      <h2 className="mt-8 mb-3 text-base font-medium">Plants</h2>
+      <div className="mt-8 mb-3 flex items-center justify-between">
+        <h2 className="text-base font-medium">Plants</h2>
+        <Button variant="accent" onClick={() => setPlantDialog({ mode: 'create' })}>+ Add plant</Button>
+      </div>
       {plants.length === 0 ? (
         <Card className="text-center text-gray-600">No plants in this garden yet.</Card>
       ) : (
@@ -115,7 +120,7 @@ export default function GardenDetailRoute() {
           {plants.map((plant) => (
             <div
               key={plant.plantId}
-              className="grid grid-cols-[1fr_auto_70px_64px] items-center gap-3 border-b border-gray-200 py-3 text-sm"
+              className="grid grid-cols-[1fr_auto_70px_64px_auto] items-center gap-3 border-b border-gray-200 py-3 text-sm"
             >
               <div>
                 <div className="font-medium">{plant.plantName}</div>
@@ -124,11 +129,22 @@ export default function GardenDetailRoute() {
               <Badge tone={typeTone[plant.plantType]}>{plant.plantType}</Badge>
               <div className="text-right tabular-nums">{plant.surfaceAreaRequired} m²</div>
               <div className="text-right tabular-nums">{plant.idealHumidityLevel}%</div>
+              <Button onClick={() => setPlantDialog({ mode: 'edit', plant })}>Edit</Button>
             </div>
           ))}
         </div>
       )}
       {editing ? <GardenFormDialog open onClose={() => setEditing(false)} mode="edit" garden={garden} /> : null}
+      {plantDialog ? (
+        <PlantFormDialog
+          open
+          onClose={() => setPlantDialog(null)}
+          mode={plantDialog.mode}
+          garden={garden}
+          plants={plants}
+          plant={plantDialog.plant}
+        />
+      ) : null}
     </main>
   );
 }

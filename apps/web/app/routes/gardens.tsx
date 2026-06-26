@@ -54,7 +54,7 @@ export default function GardensRoute() {
         <Button variant="accent" onClick={() => setCreating(true)}>+ New garden</Button>
       </div>
 
-      <div className={navigation.state === 'loading' ? 'opacity-60 transition-opacity' : ''}>
+      <div className={navigation.state === 'loading' ? 'opacity-60 transition-opacity' : undefined}>
         {gardens.length === 0 ? (
           <Card className="text-center text-gray-600">
             No gardens yet. Create your first garden to start planting.

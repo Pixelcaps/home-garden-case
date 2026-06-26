@@ -77,8 +77,8 @@ export default function GardenDetailRoute() {
   const free = Math.round((garden.totalSurfaceArea - used) * 100) / 100;
   const [editing, setEditing] = useState(false);
   const [plantDialog, setPlantDialog] = useState<{ mode: 'create' | 'edit'; plant?: Plant } | null>(null);
-  const [deleteGarden, setDeleteGarden] = useState(false);
-  const [deletePlant, setDeletePlant] = useState<Plant | null>(null);
+  const [isDeleteGardenOpen, setIsDeleteGardenOpen] = useState(false);
+  const [plantToDelete, setPlantToDelete] = useState<Plant | null>(null);
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-8">
@@ -93,7 +93,7 @@ export default function GardenDetailRoute() {
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setEditing(true)}>Edit</Button>
-          <Button variant="danger" onClick={() => setDeleteGarden(true)}>Delete</Button>
+          <Button variant="danger" onClick={() => setIsDeleteGardenOpen(true)}>Delete</Button>
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export default function GardenDetailRoute() {
               <div className="text-right tabular-nums">{plant.idealHumidityLevel}%</div>
               <div className="flex gap-2">
                 <Button onClick={() => setPlantDialog({ mode: 'edit', plant })}>Edit</Button>
-                <Button variant="danger" onClick={() => setDeletePlant(plant)}>Delete</Button>
+                <Button variant="danger" onClick={() => setPlantToDelete(plant)}>Delete</Button>
               </div>
             </div>
           ))}
@@ -155,20 +155,20 @@ export default function GardenDetailRoute() {
         />
       ) : null}
       <ConfirmDeleteDialog
-        open={deleteGarden}
-        onClose={() => setDeleteGarden(false)}
+        open={isDeleteGardenOpen}
+        onClose={() => setIsDeleteGardenOpen(false)}
         title="Delete garden"
         message={`Delete "${garden.gardenName}" and all its plants? This cannot be undone.`}
         intent="delete-garden"
       />
-      {deletePlant ? (
+      {plantToDelete ? (
         <ConfirmDeleteDialog
           open
-          onClose={() => setDeletePlant(null)}
+          onClose={() => setPlantToDelete(null)}
           title="Delete plant"
-          message={`Remove "${deletePlant.plantName}" from this garden?`}
+          message={`Remove "${plantToDelete.plantName}" from this garden?`}
           intent="delete-plant"
-          hiddenFields={{ plantId: String(deletePlant.plantId) }}
+          hiddenFields={{ plantId: String(plantToDelete.plantId) }}
         />
       ) : null}
     </main>

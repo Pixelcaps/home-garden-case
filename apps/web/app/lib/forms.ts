@@ -53,7 +53,7 @@ export function actionError(err: unknown): { error: string } {
     if (err.status < 500) {
       try {
         const body = JSON.parse(err.message);
-        const message = Array.isArray(body.details) ? body.details.join(' ') : body.error;
+        const message = Array.isArray(body.details) ? body.details.join(', ') : body.error;
         return { error: message || err.message };
       } catch {
         return { error: err.message };

@@ -15,15 +15,17 @@ interface GardenCard extends Garden {
 export async function action({ request }: { request: Request }) {
   const form = await request.formData();
   const intent = form.get('intent');
-  if (intent === 'create-garden') {
-    try {
-      await createGarden(gardenInputFromForm(form, apiConfig.defaultUserId));
-      return { ok: true };
-    } catch (err) {
-      return actionError(err);
+  try {
+    switch (intent) {
+      case 'create-garden':
+        await createGarden(gardenInputFromForm(form, apiConfig.defaultUserId));
+        return { ok: true };
+      default:
+        return { error: 'Unknown action' };
     }
+  } catch (err) {
+    return actionError(err);
   }
-  return { error: 'Unknown action' };
 }
 
 export async function loader() {

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { ApiError } from './api/resilient-fetch';
 import {
   gardenInputFromForm,
+  gardenUpdateFromForm,
   plantInputFromForm,
   actionError,
 } from './forms';
@@ -27,6 +28,16 @@ describe('gardenInputFromForm', () => {
       longitude: null,
       userId: 1,
     });
+  });
+});
+
+describe('gardenUpdateFromForm', () => {
+  it('returns garden fields without a userId key', () => {
+    const result = gardenUpdateFromForm(
+      fd({ gardenName: 'Patch', totalSurfaceArea: '20', targetHumidity: '65', locationDescription: '', latitude: '', longitude: '' }),
+    );
+    expect(result).toHaveProperty('gardenName', 'Patch');
+    expect(result).not.toHaveProperty('userId');
   });
 });
 

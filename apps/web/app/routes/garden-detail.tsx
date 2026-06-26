@@ -117,7 +117,14 @@ export default function GardenDetailRoute() {
 
       <div className="mt-8 mb-3 flex items-center justify-between">
         <h2 className="text-base font-medium">Plants</h2>
-        <Button variant="accent" onClick={() => setPlantDialog({ mode: 'create' })}>+ Add plant</Button>
+        <Button
+          variant="accent"
+          onClick={() => setPlantDialog({ mode: 'create' })}
+          disabled={free <= 0}
+          title={free <= 0 ? 'Garden is full — no surface area left' : undefined}
+        >
+          + Add plant
+        </Button>
       </div>
       {plants.length === 0 ? (
         <Card className="text-center text-gray-600">No plants in this garden yet.</Card>

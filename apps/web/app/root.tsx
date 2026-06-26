@@ -13,7 +13,7 @@ import stylesheet from './app.css?url';
 
 export const meta: MetaFunction = () => [
   {
-    title: 'New Nx React Router App',
+    title: 'Home garden',
   },
 ];
 

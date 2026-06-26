@@ -128,7 +128,7 @@ export default function GardenDetailRoute() {
           ))}
         </div>
       )}
-      <GardenFormDialog open={editing} onClose={() => setEditing(false)} mode="edit" garden={garden} />
+      {editing ? <GardenFormDialog open onClose={() => setEditing(false)} mode="edit" garden={garden} /> : null}
     </main>
   );
 }

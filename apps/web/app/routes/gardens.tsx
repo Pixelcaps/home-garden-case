@@ -78,7 +78,7 @@ export default function GardensRoute() {
           ))}
         </div>
       )}
-      <GardenFormDialog open={creating} onClose={() => setCreating(false)} mode="create" />
+      {creating ? <GardenFormDialog open onClose={() => setCreating(false)} mode="create" /> : null}
     </main>
   );
 }

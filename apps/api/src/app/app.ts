@@ -1,5 +1,6 @@
 import AutoLoad from '@fastify/autoload';
 import { diContainer, fastifyAwilixPlugin } from '@fastify/awilix';
+import bearerAuth from '@fastify/bearer-auth';
 import { asClass, asFunction } from 'awilix';
 import { FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
@@ -44,11 +45,22 @@ export async function app(fastify: FastifyInstance, opts: AppOptions) {
     options: { ...opts },
   });
 
-  // This loads all plugins defined in routes
-  // define your routes in one of these
-  fastify.register(AutoLoad, {
-    dir: path.join(__dirname, 'routes'),
-    options: { ...opts },
+  // Gate all API routes behind a bearer token (the BFF service token).
+  // Registered in an encapsulated scope so the Swagger UI at /docs stays open.
+  fastify.register(async (scope) => {
+    const apiToken = process.env.API_BEARER_TOKEN;
+    if (apiToken) {
+      await scope.register(bearerAuth, { keys: new Set([apiToken]), addHook: true });
+    } else {
+      scope.log.warn('API_BEARER_TOKEN not set — bearer auth gate disabled');
+    }
+
+    // This loads all plugins defined in routes
+    // define your routes in one of these
+    await scope.register(AutoLoad, {
+      dir: path.join(__dirname, 'routes'),
+      options: { ...opts },
+    });
   });
 
   const migrator = diContainer.resolve<MigratorService>('migratorService');

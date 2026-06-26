@@ -10,7 +10,14 @@ export function Meter({ used, total, label }: { used: number; total: number; lab
           {used} / {total} m²
         </span>
       </div>
-      <div className="h-2 overflow-hidden rounded-md bg-gray-100">
+      <div
+        className="h-2 overflow-hidden rounded-md bg-gray-100"
+        role="meter"
+        aria-valuenow={used}
+        aria-valuemin={0}
+        aria-valuemax={total}
+        aria-label={`${label ?? 'Surface area'}: ${used} of ${total} square meters`}
+      >
         <div className={`h-full rounded-md ${color}`} style={{ width: `${pct}%` }} />
       </div>
     </div>

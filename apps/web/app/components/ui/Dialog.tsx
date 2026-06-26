@@ -29,7 +29,7 @@ export function Dialog({
       <div className="flex flex-col gap-4 p-6">
         <div className="flex items-start justify-between">
           <h3 className="text-base font-medium">{title}</h3>
-          <button type="button" aria-label="Close" onClick={onClose} className="text-gray-500">
+          <button type="button" aria-label="Close" onClick={onClose} className="text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
             ✕
           </button>
         </div>

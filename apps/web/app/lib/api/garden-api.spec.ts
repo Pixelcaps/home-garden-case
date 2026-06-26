@@ -35,12 +35,18 @@ describe('garden-api', () => {
 
   it('getGarden GETs the garden by id', async () => {
     await getGarden(7);
-    expect(mockFetch).toHaveBeenCalledWith('/gardens/7', expect.objectContaining({ baseUrl: 'http://api.test' }));
+    expect(mockFetch).toHaveBeenCalledWith('/gardens/7', {
+      baseUrl: 'http://api.test',
+      token: 'tok',
+    });
   });
 
   it('getPlantsByGarden GETs the plants-by-garden path', async () => {
     await getPlantsByGarden(7);
-    expect(mockFetch).toHaveBeenCalledWith('/plants/garden/7', expect.objectContaining({ token: 'tok' }));
+    expect(mockFetch).toHaveBeenCalledWith('/plants/garden/7', {
+      baseUrl: 'http://api.test',
+      token: 'tok',
+    });
   });
 
   it('createGarden POSTs the body and invalidates the cache', async () => {

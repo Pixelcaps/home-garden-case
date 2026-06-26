@@ -23,14 +23,19 @@ const garden = (gardenId: number, totalSurfaceArea: number): Garden => ({
   updatedAt: '',
 });
 
-const plant = (plantId: number, gardenId: number, area: number): Plant => ({
+const plant = (
+  plantId: number,
+  gardenId: number,
+  area: number,
+  idealHumidityLevel = 60,
+): Plant => ({
   plantId,
   plantName: `p${plantId}`,
   species: 's',
   plantType: 'vegetable',
   plantationDate: '',
   surfaceAreaRequired: area,
-  idealHumidityLevel: 60,
+  idealHumidityLevel,
   gardenId,
   createdAt: '',
   updatedAt: '',
@@ -51,6 +56,14 @@ describe('gardens loader', () => {
     expect(result.gardens).toHaveLength(2);
     expect(result.gardens[0]).toMatchObject({ gardenId: 1, usedArea: 4.5, plantCount: 2 });
     expect(result.gardens[1]).toMatchObject({ gardenId: 2, usedArea: 0, plantCount: 0 });
+  });
+
+  it('counts plants whose humidity is outside the garden band', async () => {
+    vi.mocked(getGardensByUser).mockResolvedValue([garden(1, 20)]);
+    // garden target 60 → band 45–75; 90 is out of band, 60 is in band
+    vi.mocked(getPlantsByGarden).mockResolvedValue([plant(1, 1, 2, 90), plant(2, 1, 2, 60)]);
+    const result = await loader();
+    expect(result.gardens[0]).toMatchObject({ incompatibleCount: 1 });
   });
 
   it('returns an empty list when the user has no gardens', async () => {

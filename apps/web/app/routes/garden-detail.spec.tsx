@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createRoutesStub } from 'react-router';
+import { render, screen } from '@testing-library/react';
 import type { Garden, Plant } from '@itp-home-garden/shared';
 
 vi.mock('../lib/api/garden-api', () => ({
@@ -7,7 +9,7 @@ vi.mock('../lib/api/garden-api', () => ({
 }));
 
 import { getGarden, getPlantsByGarden } from '../lib/api/garden-api';
-import { loader } from './garden-detail';
+import GardenDetail, { loader } from './garden-detail';
 
 const garden: Garden = {
   gardenId: 7,
@@ -47,5 +49,26 @@ describe('garden-detail loader', () => {
     expect(getPlantsByGarden).toHaveBeenCalledWith(7);
     expect(result.garden.gardenId).toBe(7);
     expect(result.plants).toHaveLength(1);
+  });
+});
+
+describe('garden-detail humidity warnings', () => {
+  function renderDetail(g: Garden, plants: Plant[]) {
+    const Stub = createRoutesStub([
+      { path: '/gardens/:gardenId', Component: GardenDetail, loader: () => ({ garden: g, plants }) },
+    ]);
+    render(<Stub initialEntries={['/gardens/7']} />);
+  }
+
+  it('warns when a plant is outside the garden humidity band', async () => {
+    renderDetail({ ...garden, targetHumidity: 50 }, [{ ...plant, idealHumidityLevel: 90 }]);
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toMatch(/outside the .* humidity band/i);
+  });
+
+  it('shows no humidity warning when every plant is in band', async () => {
+    renderDetail({ ...garden, targetHumidity: 60 }, [{ ...plant, idealHumidityLevel: 60 }]);
+    await screen.findByText('Tomato'); // wait for the component to render
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 });

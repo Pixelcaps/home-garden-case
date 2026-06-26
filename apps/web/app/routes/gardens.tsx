@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, isRouteErrorResponse, useLoaderData, useNavigation, useRouteError } from 'react-router';
-import { usedArea, type Garden } from '@itp-home-garden/shared';
+import { checkHumidity, usedArea, type Garden } from '@itp-home-garden/shared';
 import { GardenFormDialog } from '../components/GardenFormDialog';
 import { Button } from '../components/ui/Button';
 import { apiConfig } from '../lib/api/config';
@@ -13,6 +13,7 @@ import { Meter } from '../components/ui/Meter';
 interface GardenCard extends Garden {
   usedArea: number;
   plantCount: number;
+  incompatibleCount: number;
 }
 
 export async function action({ request }: { request: Request }) {
@@ -36,7 +37,10 @@ export async function loader() {
   const cards: GardenCard[] = await Promise.all(
     gardens.map(async (garden) => {
       const plants = await getPlantsByGarden(garden.gardenId);
-      return { ...garden, usedArea: usedArea(plants), plantCount: plants.length };
+      const incompatibleCount = plants.filter(
+        (plant) => !checkHumidity(garden.targetHumidity, plant.idealHumidityLevel).ok,
+      ).length;
+      return { ...garden, usedArea: usedArea(plants), plantCount: plants.length, incompatibleCount };
     }),
   );
   return { gardens: cards };
@@ -69,11 +73,19 @@ export default function GardensRoute() {
                       location keep the meter + badges vertically aligned. */}
                   <div className="min-h-[1.25rem] text-sm text-gray-600">{garden.locationDescription || ' '}</div>
                   <Meter used={garden.usedArea} total={garden.totalSurfaceArea} />
-                  <div className="mt-1 flex items-center gap-2">
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
                     <Badge>Target {garden.targetHumidity}%</Badge>
                     <Badge>
                       {garden.plantCount} {garden.plantCount === 1 ? 'plant' : 'plants'}
                     </Badge>
+                    {garden.incompatibleCount > 0 ? (
+                      <Badge
+                        tone="danger"
+                        title={`${garden.incompatibleCount} plant(s) outside this garden's humidity band`}
+                      >
+                        {garden.incompatibleCount} off-band
+                      </Badge>
+                    ) : null}
                   </div>
                 </Card>
               </Link>

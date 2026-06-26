@@ -12,7 +12,13 @@ import { GardenFormDialog } from '../components/GardenFormDialog';
 import { PlantFormDialog } from '../components/PlantFormDialog';
 import { ConfirmDeleteDialog } from '../components/ConfirmDeleteDialog';
 import { Button } from '../components/ui/Button';
-import { usedArea, type Plant, type PlantType } from '@itp-home-garden/shared';
+import {
+  checkHumidity,
+  humidityBand,
+  usedArea,
+  type Plant,
+  type PlantType,
+} from '@itp-home-garden/shared';
 import {
   createPlant,
   deleteGarden,
@@ -75,6 +81,11 @@ export default function GardenDetailRoute() {
   const { garden, plants } = useLoaderData<typeof loader>();
   const used = usedArea(plants);
   const free = Math.round((garden.totalSurfaceArea - used) * 100) / 100;
+  const band = humidityBand(garden.targetHumidity);
+  const bandLabel = `${Math.max(0, band.min)}–${Math.min(100, band.max)}%`;
+  const outOfBand = plants.filter(
+    (plant) => !checkHumidity(garden.targetHumidity, plant.idealHumidityLevel).ok,
+  );
   const [editing, setEditing] = useState(false);
   const [plantDialog, setPlantDialog] = useState<{ mode: 'create' | 'edit'; plant?: Plant } | null>(null);
   const [isDeleteGardenOpen, setIsDeleteGardenOpen] = useState(false);
@@ -126,28 +137,50 @@ export default function GardenDetailRoute() {
           + Add plant
         </Button>
       </div>
+      {outOfBand.length > 0 ? (
+        <div
+          role="alert"
+          className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800"
+        >
+          {outOfBand.length} {outOfBand.length === 1 ? 'plant is' : 'plants are'} outside the {bandLabel}{' '}
+          humidity band. Adjust the plants, or change the garden target humidity.
+        </div>
+      ) : null}
       {plants.length === 0 ? (
         <Card className="text-center text-gray-600">No plants in this garden yet.</Card>
       ) : (
         <div className="flex flex-col">
-          {plants.map((plant) => (
-            <div
-              key={plant.plantId}
-              className="grid grid-cols-[1fr_auto_70px_64px_auto] items-center gap-3 border-b border-gray-200 py-3 text-sm"
-            >
-              <div>
-                <div className="font-medium">{plant.plantName}</div>
-                <div className="text-xs text-gray-500">{plant.species}</div>
+          {plants.map((plant) => {
+            const inBand = checkHumidity(garden.targetHumidity, plant.idealHumidityLevel).ok;
+            return (
+              <div
+                key={plant.plantId}
+                className="grid grid-cols-[1fr_auto_70px_64px_auto] items-center gap-3 border-b border-gray-200 py-3 text-sm"
+              >
+                <div>
+                  <div className="font-medium">{plant.plantName}</div>
+                  <div className="text-xs text-gray-500">{plant.species}</div>
+                  {!inBand ? (
+                    <div className="mt-0.5 text-xs text-red-600">
+                      Ideal humidity outside the {bandLabel} band
+                    </div>
+                  ) : null}
+                </div>
+                <Badge tone={typeTone[plant.plantType]}>{plant.plantType}</Badge>
+                <div className="text-right tabular-nums">{plant.surfaceAreaRequired} m²</div>
+                <div
+                  className={`text-right tabular-nums ${inBand ? '' : 'font-medium text-red-600'}`}
+                  title={inBand ? undefined : `Outside the ${bandLabel} humidity band`}
+                >
+                  {plant.idealHumidityLevel}%
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => setPlantDialog({ mode: 'edit', plant })}>Edit</Button>
+                  <Button variant="danger" onClick={() => setPlantToDelete(plant)}>Delete</Button>
+                </div>
               </div>
-              <Badge tone={typeTone[plant.plantType]}>{plant.plantType}</Badge>
-              <div className="text-right tabular-nums">{plant.surfaceAreaRequired} m²</div>
-              <div className="text-right tabular-nums">{plant.idealHumidityLevel}%</div>
-              <div className="flex gap-2">
-                <Button onClick={() => setPlantDialog({ mode: 'edit', plant })}>Edit</Button>
-                <Button variant="danger" onClick={() => setPlantToDelete(plant)}>Delete</Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {editing ? <GardenFormDialog open onClose={() => setEditing(false)} mode="edit" garden={garden} /> : null}

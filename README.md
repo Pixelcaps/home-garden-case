@@ -47,18 +47,20 @@ A small full-stack app for managing home gardens and the plants in them, built o
 
 ```bash
 npm install
+cp .env.example .env   # local config — Nx auto-loads it for its tasks
+```
 
-# Terminal 1 — backend (the API gate is on when a token is set)
-API_BEARER_TOKEN=dev-secret npx nx dev api
+Then start the two apps in separate terminals:
 
-# Terminal 2 — frontend, pointed at the API with the same token
-API_BASE_URL=http://localhost:3000 API_BEARER_TOKEN=dev-secret npx nx dev web
+```bash
+npx nx dev api   # terminal 1 — wait for "[ ready ] http://localhost:3000"
+npx nx dev web   # terminal 2
 ```
 
 - App → **http://localhost:4200** (redirects to `/gardens`)
 - API docs (Swagger) → **http://localhost:3000/docs**
 
-Use the same `API_BEARER_TOKEN` for both processes, or omit it from both to run the API ungated.
+`.env` provides `API_BASE_URL`, `API_BEARER_TOKEN`, and `DEFAULT_USER_ID` (documented in `.env.example`). The same bearer token gates the API and is attached server-side by the web BFF, so set both to the same value — or clear it in both to run the API ungated. (You can also pass the vars inline instead: `API_BEARER_TOKEN=… npx nx dev api`.)
 
 **Tests:** `npx nx run-many -t test -p web shared` · **Build:** `npx nx run-many -t build -p web api`
 

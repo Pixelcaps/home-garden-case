@@ -46,3 +46,8 @@ Thumbs.db
 db.sqlite
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+# Environment (local only; see .env.example)
+.env
+.env.local
+.env.*.local
